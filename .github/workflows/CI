@@ -1,0 +1,87 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ feature ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build with Maven Wrapper
+        run: ./mvnw -B package
+
+      - name: Install SonarQube Scanner
+        run: |
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-linux.zip
+          unzip sonar-scanner-cli-4.6.2.2472-linux.zip
+          sudo mv sonar-scanner-4.6.2.2472-linux /opt/sonar-scanner
+          echo "/opt/sonar-scanner/bin" >> $GITHUB_ENV
+
+      - name: SonarQube Analysis
+        uses: sonarsource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=my_project_key
+            -Dsonar.organization=my_org
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Install OWASP Dependency-Check
+        run: |
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.0.0/dependency-check-8.0.0-release.zip
+          unzip dependency-check-8.0.0-release.zip
+          sudo mv dependency-check /opt/dependency-check
+          echo "/opt/dependency-check/bin" >> $GITHUB_ENV
+
+      - name: Install Syft
+        run: |
+          curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
+
+      - name: Generate SBOM with Syft
+        run: |
+          syft sbom dir:. -o cyclonedx-json > sbom.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: sbom.json
+
+      - name: Dependency Scanning with OWASP Dependency-Check
+        run: |
+          /opt/dependency-check/bin/dependency-check.sh --project my_project --out dependency-check-report --scan .
+
+      - name: Upload Dependency Check Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: dependency-check-report
+
+      - name: Scan Docker Images for Vulnerabilities
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.36.0/trivy_0.36.0_Linux-64bit.deb -o trivy.deb
+          sudo dpkg -i trivy.deb
+          trivy image my_microservice:latest
+
+      - name: Deploy Microservices
+        run: |
+          kubectl apply -f k8s/deployment.yaml
