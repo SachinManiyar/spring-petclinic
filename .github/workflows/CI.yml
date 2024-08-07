@@ -52,7 +52,15 @@ jobs:
       - name: Install Syft
         run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
-
+      - name: Check SonarQube Quality Gate
+        run: |
+         sleep 10
+          STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "http://20.235.200.36:9000/api/qualitygates/project_status?projectKey=PetClinic" | jq -r '.projectStatus.status')
+          echo "Quality Gate Status: $STATUS"
+          if [ "$STATUS" != "OK" ]; then
+            echo "SonarQube Quality Gate failed"
+            exit 1
+          fi
       - name: Generate SBOM with Syft
         run: |
           syft dir:. -o cyclonedx-json > sbom.json
