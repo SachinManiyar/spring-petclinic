@@ -62,7 +62,7 @@ jobs:
       - name: Install & Running TruffleHog
         run: |
           pip install truffleHog
-          trufflehog --repo_path https://github.com/SachinManiyar/spring-petclinic/
+          trufflehog --repo_path https://github.com/SachinManiyar/spring-petclinic/ --git_url https://github.com/SachinManiyar/spring-petclinic/
       
       - name: Install Syft
         run: |
