@@ -49,9 +49,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://20.235.200.36:9000/
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PetClinic -Dsonar.projectName='PetClinic'
-      - name: Install Syft
-        run: |
-          curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
+      
       - name: Check SonarQube Quality Gate
         run: |
          sleep 10
@@ -60,7 +58,15 @@ jobs:
           if [ "$STATUS" != "OK" ]; then
             echo "SonarQube Quality Gate failed"
             exit 1
-          fi
+          fi      
+      
+      - name: Find Secrets
+        uses: max/secret-scan@master
+      
+      - name: Install Syft
+        run: |
+          curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
+
       - name: Generate SBOM with Syft
         run: |
           syft dir:. -o cyclonedx-json > sbom.json
