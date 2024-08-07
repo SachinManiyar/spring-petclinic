@@ -59,9 +59,10 @@ jobs:
             echo "SonarQube Quality Gate failed"
             exit 1
           fi      
-      
-      - name: Find Secrets
-        uses: max/secret-scan@master
+      - name: Install & Running TruffleHog
+        run: |
+          pip install truffleHog
+          trufflehog --repo-url https://github.com/SachinManiyar/spring-petclinic/
       
       - name: Install Syft
         run: |
