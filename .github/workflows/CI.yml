@@ -49,20 +49,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://20.235.200.36:9000/
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PetClinic -Dsonar.projectName='PetClinic'
-      - name: Run FoD SAST Scan
-        uses: fortify/github-action@a92347297e02391b857e7015792cd1926a4cd418
-        with:
-          sast-scan: true
-          application-name: 'Java_App'
-          release-name: 'Test'
-          email: ${{secrets.FOD_USER}}
-        env:
-          ### Required configuration when integrating with Fortify on Demand
-          FOD_URL: https://trial.fortify.com
-          FOD_TENANT: ${{secrets.FOD_TENANT}}
-          FOD_USER: ${{secrets.FOD_USER}}
-          FOD_PASSWORD: ${{secrets.FOD_PAT}}
-          FOD_RELEASE: Java_App:Test
       - name: Install Syft
         run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
