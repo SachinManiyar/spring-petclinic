@@ -2,8 +2,8 @@ name: Java CI with Maven
 
 on:
   workflow_dispatch:
-  #push:
-    #branches: [ feature ]
+  push:
+    branches: [ feature ]
 
 
 jobs:
@@ -76,9 +76,18 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
-
-      - name: Push Docker Image
+      - name: Extract Maven Properties
+        id: extract-properties
         run: |
-          docker tag ${project.groupId}/${project.artifactId}:${project.version} ghcr.io/${{ github.repository }}/${project.name}:latest
-          docker push ghcr.io/${{ github.repository }}/${project.name}:latest
-
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          NAME=$(mvn help:evaluate -Dexpression=project.name -q -DforceStdout)
+          echo "GROUP_ID=${GROUP_ID}" >> $GITHUB_ENV
+          echo "ARTIFACT_ID=${ARTIFACT_ID}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "NAME=${NAME}" >> $GITHUB_ENV
+      - name: Tag and Push Docker Image
+        run: |
+          docker tag ${GROUP_ID}/${ARTIFACT_ID}:${VERSION} ghcr.io/${{ github.repository }}/${NAME}:${{ github.event.inputs.image_tag }}
+          docker push ghcr.io/${{ github.repository }}/${NAME}:${{ github.event.inputs.image_tag }}
