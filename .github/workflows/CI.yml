@@ -59,11 +59,6 @@ jobs:
             echo "SonarQube Quality Gate failed"
             exit 1
           fi      
-      - name: Install & Running TruffleHog
-        run: |
-          pip install truffleHog
-          trufflehog git_url https://github.com/SachinManiyar/spring-petclinic/ --repo_path .
-      
       - name: Install Syft
         run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
@@ -78,26 +73,4 @@ jobs:
           name: sbom
           path: sbom.json
 
-      - name: Dependency Scanning with OWASP Dependency-Check
-        run: |
-          /opt/dependency-check/bin/dependency-check.sh --project my_project --out dependency-check-report --scan .
 
-      - name: Upload Dependency Check Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: dependency-check-report
-          path: dependency-check-report
-
-      - name: Scan Docker Images for Vulnerabilities
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io
-          sudo systemctl start docker
-          sudo systemctl enable docker
-          curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.36.0/trivy_0.36.0_Linux-64bit.deb -o trivy.deb
-          sudo dpkg -i trivy.deb
-          trivy image my_microservice:latest
-
-      - name: Deploy Microservices
-        run: |
-          kubectl apply -f k8s/deployment.yaml
