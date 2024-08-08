@@ -52,7 +52,7 @@ jobs:
       
       - name: Check SonarQube Quality Gate
         run: |
-         sleep 10
+         sleep 20
           STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "http://172.203.224.21:9002/api/qualitygates/project_status?projectKey=PetClinic" | jq -r '.projectStatus.status')
           echo "Quality Gate Status: $STATUS"
           if [ "$STATUS" != "OK" ]; then
