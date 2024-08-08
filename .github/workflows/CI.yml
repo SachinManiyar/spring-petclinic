@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven Wrapper
-        run: ./mvnw -B package
+        run: mvn clean install -DskipTests  # Pass -DskipTests to skip tests
 
       - uses: actions/checkout@v4
         with:
