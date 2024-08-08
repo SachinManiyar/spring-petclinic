@@ -84,7 +84,7 @@ class ClinicServiceTests {
 	@Test
 	void shouldFindOwnersByLastName() {
 		Page<Owner> owners = this.owners.findByLastName("Davis", pageable);
-		assertThat(owners).hasSize(20);
+		assertThat(owners).hasSize(2);
 
 		owners = this.owners.findByLastName("Daviss", pageable);
 		assertThat(owners).isEmpty();
@@ -115,7 +115,7 @@ class ClinicServiceTests {
 		assertThat(owner.getId()).isNotZero();
 
 		owners = this.owners.findByLastName("Schultz", pageable);
-		assertThat(owners.getTotalElements()).isEqualTo(found + 10);
+		assertThat(owners.getTotalElements()).isEqualTo(found + 1);
 	}
 
 	@Test
