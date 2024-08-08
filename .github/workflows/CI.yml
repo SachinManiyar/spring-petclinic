@@ -44,6 +44,20 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      - name: Build Docker Image
+        run: ./mvnw spring-boot:build-image
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.CR_Username }}
+          password: ${{ secrets.CR_Password }}
+          registry: ghcr.io
+
+      - name: Push Docker Image
+        run: |
+          docker tag ${project.groupId}/${project.artifactId}:${project.version} ghcr.io/${{ github.repository }}/${project.name}:latest
+          docker push ghcr.io/${{ github.repository }}/${project.name}:latest
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
