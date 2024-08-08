@@ -47,13 +47,13 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://20.235.200.36:9000/
+          SONAR_HOST_URL: http://172.203.224.21:9002/
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PetClinic -Dsonar.projectName='PetClinic'
       
       - name: Check SonarQube Quality Gate
         run: |
          sleep 10
-          STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "http://20.235.200.36:9000/api/qualitygates/project_status?projectKey=PetClinic" | jq -r '.projectStatus.status')
+          STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "http://172.203.224.21:9002/api/qualitygates/project_status?projectKey=PetClinic" | jq -r '.projectStatus.status')
           echo "Quality Gate Status: $STATUS"
           if [ "$STATUS" != "OK" ]; then
             echo "SonarQube Quality Gate failed"
