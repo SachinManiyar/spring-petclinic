@@ -74,8 +74,10 @@ jobs:
           chmod +x /usr/local/bin/cosign
           cosign version
 
-      - name: Create Signing Key File
-        run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.key
+      - name: Create Decrypted Signing Key File
+        run: |
+          echo "${{ secrets.COSIGN_KEY }}" > cosign.key.enc
+          openssl rsa -in cosign.key.enc -out cosign.key -passin pass:${{ secrets.COSIGN_PASSPHRASE }}
 
       - name: Sign Docker Image with Cosign
         run: |
