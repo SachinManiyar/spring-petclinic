@@ -75,7 +75,7 @@ jobs:
           cosign version
 
       - name: Create Signing Key File
-        run: echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+        run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.key
 
       - name: Sign Docker Image with Cosign
         run: |
@@ -91,7 +91,7 @@ jobs:
         with:
           cosign-version: v3.5.0
       - name: Create Public Key File
-        run: echo "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
+        run: echo "${{ secrets.COSIGN_KEY }}" > cosign.pub
       - name: Verify Docker Image Signature
         run: |
           cosign verify --key ${{ secrets.COSIGN_KEY }} ghcr.io/sachinmaniyar/spring-petclinic:latest
