@@ -109,9 +109,6 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
-
-        with:
-          image_ref: ghcr.io/${{ github.repository }}/my-image:latest
       - name: Tag and Push Docker Image
         run: |
           docker tag petclinic:latest ghcr.io/SachinManiyar/spring-petclinic:latest
