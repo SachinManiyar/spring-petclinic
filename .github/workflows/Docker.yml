@@ -43,15 +43,15 @@ jobs:
       - name: Tag and Push Docker Image
         run: |
           docker tag petclinic:latest ghcr.io/SachinManiyar/spring-petclinic:latest 
-          docker push ghcr.io/SachinManiyar/spring-petclinic:latest   
+          docker push ghcr.io/sachinmaniyar/spring-petclinic:latest   
       - name: Build an image from Dockerfile
         run: |
-          docker build ghcr.io/SachinManiyar/spring-petclinic:latest
+          docker build ghcr.io/sachinmaniyar/spring-petclinic:latest
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'ghcr.io/SachinManiyar/spring-petclinic:latest'
+          image-ref: 'ghcr.io/sachinmaniyar/spring-petclinic:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
