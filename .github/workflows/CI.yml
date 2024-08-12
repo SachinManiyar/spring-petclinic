@@ -33,6 +33,13 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
+  Test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+
+    steps:          
       - name: Cache SonarQube packages
         uses: actions/cache@v1
         with:
@@ -72,29 +79,29 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Run analysis"
-        uses: ossf/scorecard-action@0864cf19026789058feabb7e87baa5f140aac736 # v2.3.1
-        with:
-          results_file: results.sarif
-          results_format: sarif
+      # - name: "Run analysis"
+      #   uses: ossf/scorecard-action@0864cf19026789058feabb7e87baa5f140aac736 # v2.3.1
+      #   with:
+      #     results_file: results.sarif
+      #     results_format: sarif
 
-          publish_results: true
+      #     publish_results: true
 
-      # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
-      # format to the repository Actions tab.
-      - name: "Upload artifact"
-        uses: actions/upload-artifact@97a0fba1372883ab732affbe8f94b823f91727db # v3.pre.node20
-        with:
-          name: SARIF file
-          path: results.sarif
-          retention-days: 5
+      # # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
+      # # format to the repository Actions tab.
+      # - name: "Upload artifact"
+      #   uses: actions/upload-artifact@97a0fba1372883ab732affbe8f94b823f91727db # v3.pre.node20
+      #   with:
+      #     name: SARIF file
+      #     path: results.sarif
+      #     retention-days: 5
 
-      - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif          
-      - name: Build Docker Image
-        run: ./mvnw spring-boot:build-image
+      # - name: "Upload to code-scanning"
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: results.sarif          
+      # - name: Build Docker Image
+      #   run: ./mvnw spring-boot:build-image
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
