@@ -91,8 +91,8 @@ jobs:
         uses: sigstore/cosign-action@v2
         with:
           cosign-version: v3.5.0
-      - name: Create Public Key File
-        run: echo "${{ secrets.COSIGN_KEY }}" > cosign.pub
+      - name: Create Public Key File_
+        run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.pub
       - name: Verify Docker Image Signature
         run: |
           cosign verify --key ${{ secrets.COSIGN_KEY }} ghcr.io/sachinmaniyar/spring-petclinic:latest
