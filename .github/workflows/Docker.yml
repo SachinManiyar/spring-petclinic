@@ -79,6 +79,8 @@ jobs:
           echo "${{ secrets.COSIGN_KEY }}" > cosign.key.enc
           openssl rsa -in cosign.key.enc -out cosign.key -passin pass:${{ secrets.COSIGN_PASSPHRASE }}
 
+
+
       - name: Sign Docker Image with Cosign
         run: |
           cosign sign --key cosign.key ghcr.io/sachinmaniyar/spring-petclinic:latest
