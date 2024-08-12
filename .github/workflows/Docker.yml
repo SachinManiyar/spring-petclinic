@@ -74,10 +74,12 @@ jobs:
           chmod +x /usr/local/bin/cosign
           cosign version
 
+      - name: Create Signing Key File
+        run: echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+
       - name: Sign Docker Image with Cosign
         run: |
-          cosign sign --key ${{ secrets.COSIGN_KEY_PR }} ghcr.io/sachinmaniyar/spring-petclinic:latest
-
+          cosign sign --key cosign.key ghcr.io/sachinmaniyar/spring-petclinic:latest
   verify:
     name: Verify Container Image
     runs-on: ubuntu-latest
@@ -88,7 +90,8 @@ jobs:
         uses: sigstore/cosign-action@v2
         with:
           cosign-version: v3.5.0
-
+      - name: Create Public Key File
+        run: echo "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
       - name: Verify Docker Image Signature
         run: |
           cosign verify --key ${{ secrets.COSIGN_KEY }} ghcr.io/sachinmaniyar/spring-petclinic:latest
