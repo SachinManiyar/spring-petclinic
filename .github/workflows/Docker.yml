@@ -76,11 +76,8 @@ jobs:
 
       - name: Create Decrypted Signing Key File
         run: |
-          echo "${{ secrets.COSIGN_KEY }}" > cosign.key.enc
-          openssl rsa -in cosign.key.enc -out cosign.key -passin pass:${{ secrets.COSIGN_PASSPHRASE }}
-
-
-
+          echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+          
       - name: Sign Docker Image with Cosign
         run: |
           cosign sign --key cosign.key ghcr.io/sachinmaniyar/spring-petclinic:latest
