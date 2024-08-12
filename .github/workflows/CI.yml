@@ -109,18 +109,24 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
-      - name: Extract Maven Properties
-        id: extract-properties
-        run: |
-          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
-          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          NAME=$(mvn help:evaluate -Dexpression=project.name -q -DforceStdout)
-          echo "GROUP_ID=${GROUP_ID}" >> $GITHUB_ENV
-          echo "ARTIFACT_ID=${ARTIFACT_ID}" >> $GITHUB_ENV
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "NAME=${NAME}" >> $GITHUB_ENV
+
+        with:
+          image_ref: ghcr.io/${{ github.repository }}/my-image:latest
       - name: Tag and Push Docker Image
         run: |
-          docker tag ${GROUP_ID}/${ARTIFACT_ID}:${VERSION} ghcr.io/${{ github.repository }}/${NAME}:${{ github.event.inputs.image_tag }}
-          docker push ghcr.io/${{ github.repository }}/${NAME}:${{ github.event.inputs.image_tag }}
+          docker tag petclinic:latest ghcr.io/SachinManiyar/spring-petclinic:latest
+          
+          docker push ghcr.io/SachinManiyar/spring-petclinic:latest
+      - name: Set up Trivy
+        uses: aquasecurity/trivy-action@v0.3.0
+        with:
+          github_token: ${{ secrets.CR_Password }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/SachinManiyar/spring-petclinic:latest
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.3.0
+        with:
+          image_ref: ghcr.io/SachinManiyar/spring-petclinic:latest         
