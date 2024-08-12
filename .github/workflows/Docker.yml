@@ -69,10 +69,9 @@ jobs:
 
       - name: Install Cosign CLI
         run: |
-          curl -sLo cosign https://github.com/sigstore/cosign/releases/download/v1.8.1/cosign-linux-amd64 \
-            && chmod +x cosign \
-            && sudo mv cosign /usr/local/bin/
-
+          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.1.1/cosign-darwin-amd64
+          chmod +x /usr/local/bin/cosign
+          cosign version
       - name: Sign Docker Image with Cosign
         run: |
           cosign sign --key ${{ secrets.COSIGN_KEY_PR }} ghcr.io/sachinmaniyar/spring-petclinic:latest
