@@ -42,7 +42,7 @@ jobs:
           registry: ghcr.io
       - name: Tag and Push Docker Image
         run: |
-          docker tag petclinic:latest ghcr.io/SachinManiyar/spring-petclinic:latest 
+          docker tag petclinic:latest ghcr.io/sachinmaniyar/spring-petclinic:latest 
           docker push ghcr.io/sachinmaniyar/spring-petclinic:latest   
       - name: Build an image from Dockerfile
         run: |
