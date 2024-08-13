@@ -70,6 +70,7 @@ jobs:
           echo "Quality Gate Status: $STATUS"
           if [ "$STATUS" != "OK" ]; then
             echo "SonarQube Quality Gate failed"
+            fi
         
       - name: Install Syft
         run: |
