@@ -29,22 +29,22 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.CR_Username }}
-          password: ${{ secrets.CR_Password }}
-          registry: ghcr.io
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASS }}
+          
 
       - name: Tag Docker Image
         run: |
-          docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/sachinmaniyar/spring-petclinic:latest
+          docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT sachinmaniyar/spring-petclinic:latest
 
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/sachinmaniyar/spring-petclinic:latest
+          docker push sachinmaniyar/spring-petclinic:latest
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'ghcr.io/sachinmaniyar/spring-petclinic:latest'
+          image-ref: 'sachinmaniyar/spring-petclinic:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
