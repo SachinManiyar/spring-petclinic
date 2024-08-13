@@ -92,10 +92,6 @@ jobs:
     needs: sign
 
     steps:
-      - name: Set up Cosign
-        uses: sigstore/cosign-action@v2
-        with:
-          cosign-version: v3.5.0
       - name: Create Public Key File_
         run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.pub
       - name: Verify Docker Image Signature
