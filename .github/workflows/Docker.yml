@@ -86,14 +86,8 @@ jobs:
       - name: Sign Docker Image with Cosign
         run: |
           cosign sign --key cosign.key ghcr.io/sachinmaniyar/spring-petclinic:latest
-  verify:
-    name: Verify Container Image
-    runs-on: ubuntu-latest
-    needs: sign
-
-    steps:
       - name: Create Public Key File_
         run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.pub
       - name: Verify Docker Image Signature
         run: |
-          cosign verify --key ${{ secrets.COSIGN_KEY }} ghcr.io/sachinmaniyar/spring-petclinic:latest
+          cosign verify --key cosign.pub ghcr.io/sachinmaniyar/spring-petclinic:latest
