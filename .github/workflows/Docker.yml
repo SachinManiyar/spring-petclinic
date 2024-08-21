@@ -35,16 +35,16 @@ jobs:
 
       - name: Tag Docker Image
         run: |
-          docker tag docker.io/library/${{ secrets.IMG_NAME }}:3.3.0-SNAPSHOT sachinmaniyar/${{ secrets.IMG_NAME }}:latest
+          docker tag docker.io/library/${{ env.IMG_NAME }}:3.3.0-SNAPSHOT sachinmaniyar/${{ env.IMG_NAME }}:latest
 
       - name: Push Docker Image
         run: |
-          docker push sachinmaniyar/${{ secrets.IMG_NAME }}:latest
+          docker push sachinmaniyar/${{ env.IMG_NAME }}:latest
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'sachinmaniyar/${{ secrets.IMG_NAME }}:latest'
+          image-ref: 'sachinmaniyar/${{ env.IMG_NAME }}:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
@@ -85,9 +85,9 @@ jobs:
           
       - name: Sign Docker Image with Cosign
         run: |
-          cosign sign --key cosign.key ghcr.io/sachinmaniyar/${{ secrets.IMG_NAME }}:latest
+          cosign sign --key cosign.key ghcr.io/sachinmaniyar/${{ env.IMG_NAME }}:latest
       - name: Create Public Key File_
         run: echo "${{ secrets.COSIGN_KEY_PR }}" > cosign.pub
       - name: Verify Docker Image Signature
         run: |
-          cosign verify --key cosign.pub ghcr.io/sachinmaniyar/${{ secrets.IMG_NAME }}:latest
+          cosign verify --key cosign.pub ghcr.io/sachinmaniyar/${{ env.IMG_NAME }}:latest
