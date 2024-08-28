@@ -326,10 +326,10 @@ jobs:
       - name: Verify SBOM Uploaded to Image Repo
         run: |
           cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/maven-build.yml@refs/heads/main --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/${{ env.AppName }} --certificate-github-workflow-trigger=workflow_dispatch --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
-        # shell: bash
-        # env:
-        #   COSIGN_KEY: ${{secrets.Cosign_Key}}
-        #   COSIGN_PASSWORD: ${{secrets.Cosign_Key_Password}}
+        shell: bash
+        env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
       - name: Fetch commit details
         run: |
@@ -388,6 +388,7 @@ jobs:
           path: output.json
   vulnerability_score:
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v3     
@@ -428,8 +429,10 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          username: ${{github.actor}}
-          password: ${{secrets.GH_TOKEN}}
+          username: ${{ secrets.CR_Username }}
+          #username: ${{github.actor}}
+          password: ${{ secrets.CR_Password }}
+          #password: ${{secrets.GH_TOKEN}}
           registry: ghcr.io
 
       - name: Install Cosign CLI
@@ -443,8 +446,8 @@ jobs:
           cosign public-key --key env://COSIGN_KEY > cosign.pub
         shell: bash
         env:
-          COSIGN_KEY: ${{secrets.Cosign_Key}}
-          COSIGN_PASSWORD: ${{secrets.Cosign_Key_Password}}
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
       - name: Attestation using Predicate
         run: |
