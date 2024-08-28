@@ -176,7 +176,7 @@ jobs:
   sign:
     name: Sign Container Image
     runs-on: ubuntu-latest
-    needs: build
+    needs: Test
     env:
       AppName: 'spring-petclinic'
     steps:
@@ -189,7 +189,7 @@ jobs:
       - name: Download file artifact
         uses: actions/download-artifact@v4
         with:
-          name: sbom
+          name: sbom.json
         
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
@@ -396,7 +396,7 @@ jobs:
       
       - name: Download shell script from Gist
         run: |
-          curl -0 vulnerability_score.sh https://gist.github.com/SachinManiyar/50c889020f611cc0e2bad3543396992a
+          curl -o vulnerability_score.sh https://gist.github.com/SachinManiyar/50c889020f611cc0e2bad3543396992a
 
       - name: Make the script executable
         run: chmod +x vulnerability_score.sh
