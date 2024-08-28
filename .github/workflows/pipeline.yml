@@ -396,13 +396,13 @@ jobs:
       
       - name: Download shell script from Gist
         run: |
-          curl -o vulnerability_score.sh https://gist.githubusercontent.com/SachinManiyar/50c889020f611cc0e2bad3543396992a/raw/4830ded1ecfca79946741e0bae70177531650923/vulnerability_score.sh
+          curl -o vulnerability_score.sh https://gist.githubusercontent.com/SachinManiyar/50c889020f611cc0e2bad3543396992a/raw/b13972079aa046ffc7ecbc4e49c9888d107718e6/vulnerability_score.sh
 
       - name: Make the script executable
         run: chmod +x vulnerability_score.sh
 
       - name: Run the shell script
-        run: ./vulnerability_score.sh -u {{ secrets.URL_SCORE }} -t {{ secrets.T_SCORE }} -p {{ secrets.P_SCORE }}
+        run: ./vulnerability_score.sh -u {{ secrets.URL_SCORE }} -t {{ secrets.T_SCORE }} -p {{ secrets.P_SCORE }} -d {{ secrets.D_SCORE }} -v {{ secrets.V_SCORE }}
   last_job:
     permissions:
       security-events: write
