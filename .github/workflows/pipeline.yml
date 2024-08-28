@@ -402,7 +402,7 @@ jobs:
         run: chmod +x vulnerability_score.sh
 
       - name: Run the shell script
-        run: ./vulnerability_score.sh -u {{ secrets.URL_SCORE }} -t {{ secrets.T_SCORE }} -p {{ secrets.P_SCORE }} -d {{ secrets.D_SCORE }} -v {{ secrets.V_SCORE }}
+        run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }}
   last_job:
     permissions:
       security-events: write
