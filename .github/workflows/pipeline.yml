@@ -4,7 +4,8 @@
 name: Java CI with Maven
 
 on:
-
+  push:
+    branches: [ testing ]
   workflow_dispatch:
 
 jobs:
