@@ -327,7 +327,7 @@ jobs:
 
       - name: Verify SBOM Uploaded to Image Repo
         run: |
-          set -e  # Exit on error
+        
           cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/pipeline.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
         shell: bash
         env:
