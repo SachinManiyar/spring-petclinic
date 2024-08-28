@@ -202,7 +202,7 @@ jobs:
           
       - name: Install Cosign CLI
         run: |
-          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
+          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.1.1/cosign-linux-amd64
           chmod +x /usr/local/bin/cosign
           cosign version
 
@@ -211,8 +211,8 @@ jobs:
           cosign sign --key env://COSIGN_KEY ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes
         shell: bash
         env:
-          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
           
       # - name: Create Public Key File_
       #   run: echo "${{ secrets.Cosign_Pub }}" > cosign.pub
@@ -222,8 +222,8 @@ jobs:
           cosign public-key --key env://COSIGN_KEY > cosign.pub
         shell: bash
         env:
-          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
         
       - name: Verify Docker Image Signature
         run: |
