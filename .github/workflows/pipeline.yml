@@ -127,7 +127,7 @@ jobs:
           gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
           # gh attestation verify app.jar --owner saurav631 --format=json
           # gh attestation verify sbom.json --owner saurav631 --bundle ./saurav631-spring-petclinic-attestation-1599265.sigstore.json
-  Image Build and sign:
+  Image_Build_And_Sign:
     runs-on: ubuntu-latest
     env:
       AppName: 'spring-petclinic'
