@@ -372,7 +372,7 @@ jobs:
           path: output.json
   vulnerability_score:
     runs-on: ubuntu-latest
-    if: false
+    #if: false
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v3     
@@ -388,7 +388,7 @@ jobs:
 
       - name: Run the shell script
         run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }}
-  last_job:
+  Attest_Verify_Predicate:
     permissions:
       security-events: write
       id-token: write
