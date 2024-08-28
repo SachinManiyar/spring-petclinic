@@ -415,6 +415,8 @@ jobs:
       attestations: write
       packages: write
     runs-on: ubuntu-latest
+    env:
+      AppName: 'spring-petclinic'
     needs: sign
     # strategy:
     #   matrix:
