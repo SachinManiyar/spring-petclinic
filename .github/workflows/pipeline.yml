@@ -135,6 +135,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17     
       - name: Build Docker Image
         run: ./mvnw spring-boot:build-image
         
@@ -392,7 +396,7 @@ jobs:
       
       - name: Download shell script from Gist
         run: |
-          curl -O https://gist.github.com/SachinManiyar/50c889020f611cc0e2bad3543396992a
+          curl -0 vulnerability_score.sh https://gist.github.com/SachinManiyar/50c889020f611cc0e2bad3543396992a
 
       - name: Make the script executable
         run: chmod +x vulnerability_score.sh
