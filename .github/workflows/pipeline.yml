@@ -123,11 +123,9 @@ jobs:
         env:
           GH_TOKEN: ${{secrets.CR_Password}}
         run: |
-          # gh attestation verify sbom.json --owner saurav631 --bundle ./sbom.json
           gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
-          # gh attestation verify app.jar --owner saurav631 --format=json
-          # gh attestation verify sbom.json --owner saurav631 --bundle ./saurav631-spring-petclinic-attestation-1599265.sigstore.json
-  Image_Build_And_Sign:
+
+  Image_Build_And_Scan:
     runs-on: ubuntu-latest
     env:
       AppName: 'spring-petclinic'
@@ -203,7 +201,7 @@ jobs:
           
       - name: Install Cosign CLI
         run: |
-          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.1.1/cosign-linux-amd64
+          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
           chmod +x /usr/local/bin/cosign
           cosign version
 
@@ -214,18 +212,14 @@ jobs:
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-          
-      # - name: Create Public Key File_
-      #   run: echo "${{ secrets.Cosign_Pub }}" > cosign.pub
-
+        
       - name: Public Key Creation
         run: |
           cosign public-key --key env://COSIGN_KEY > cosign.pub
-          cat cosign.pub
         shell: bash
         env:
-          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
         
       - name: Verify Docker Image Signature
         run: |
@@ -304,11 +298,6 @@ jobs:
         env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
-        
-      # - name: Push Signed SBOM to Registry
-      #   run: |
-      #     # set -e  # Exit on error
-      #     docker push ghcr.io/sachinmaniyar/sbom.json
 
       - name: upload Signed SBOM to Github Registry
         run: |
@@ -317,13 +306,6 @@ jobs:
           echo "output: $output2"
           sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
           echo "sbom_file: $sbom_file"
-          # Set the extracted SHA as an environment variable
-          # echo "SBOM_FILE=$sbom_file" >> $GITHUB_ENV
-
-      # - name: Download SBOM Digest Locally
-      #   run: |
-      #     # set -e  # Exit on error
-      #     curl -L ghcr.io/sachinmaniyar/demo/sbom.json/blobs/$SBOM_FILE
 
       - name: Verify SBOM Uploaded to Image Repo
         run: |
@@ -467,5 +449,5 @@ jobs:
 
       - name: Verify Predicate Attestation
         run: |
-          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/maven-build.yml@refs/heads/main --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=workflow_dispatch --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/pipeline.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
           # $(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
