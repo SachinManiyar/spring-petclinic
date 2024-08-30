@@ -1,4 +1,4 @@
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sachinmaniyar/spring-petclinic/badge)](https://scorecard.dev/viewer/?uri=github.com/sachinmaniyar/spring-petclinic)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SachinManiyar/spring-petclinic/badge)](https://scorecard.dev/viewer/?uri=github.com/SachinManiyar/spring-petclinic)
 
 # Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)
 
