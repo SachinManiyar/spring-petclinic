@@ -1,7 +1,8 @@
-# File: .github/workflows/workflow.yml
 
-on: [push]
-
+on:
+  push:
+    branches:
+      - testing
 name: Run Azure Login With a Service Principal Secret
 
 jobs:
@@ -12,7 +13,10 @@ jobs:
       RESOURCE_GROUP: 'K8SDemo'
       CLUSTER_NAME: 'K8SDemo'
     steps:
-
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: testing
     - uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -25,15 +29,22 @@ jobs:
           az account show
           # Use kubelogin to configure your kubeconfig for Azure auth
     - name: Set up kubelogin for non-interactive login
-        uses: azure/use-kubelogin@v1
-        with:
-          kubelogin-version: 'v0.0.25'
+      uses: azure/use-kubelogin@v1
+      with:
+        kubelogin-version: 'v0.0.25'
 
       # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
     - name: Get K8s context
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
-          admin: 'false'
-          use-kubelogin: 'true'      
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ env.RESOURCE_GROUP }}
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        admin: 'false'
+        use-kubelogin: 'true' 
+    - name: List files in k8s directory
+      run: ls -R k8s         
+    - name: Deploy to AKS
+      run: |
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+        kubectl rollout status deployment/myapp-deployment              
