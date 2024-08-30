@@ -462,6 +462,6 @@ jobs:
           use-kubelogin: 'true'       
       - name: Deploy to AKS
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl rollout status deployment/myapp-deployment    
+          kubectl apply -f K8s/deployment.yaml
+          kubectl apply -f K8s/service.yaml
+              
