@@ -422,7 +422,6 @@ jobs:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
         
-
       - name: Verify Predicate Attestation
         run: |
           cosign verify-attestation --certificate-github-workflow-name=.github/workflows/pipeline.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
