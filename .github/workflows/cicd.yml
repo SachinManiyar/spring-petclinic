@@ -44,7 +44,7 @@ jobs:
           GH_TOKEN: ${{secrets.CR_Password}}
         run: |
           gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
-  Test:
+  Sonar_And_Sbom_Generation:
     runs-on: ubuntu-latest
     env:
       AppName: 'spring-petclinic'
@@ -334,7 +334,7 @@ jobs:
           path: output.json
   Sbom_Upload:
     runs-on: ubuntu-latest
-    needs: Test
+    needs: Sonar_And_Sbom_Generation
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v3     
@@ -354,6 +354,7 @@ jobs:
  
   vulnerability_score:
     runs-on: ubuntu-latest
+    needs: Sbom_Upload
     #if: false
     steps:
       - name: Check Out Source Code
