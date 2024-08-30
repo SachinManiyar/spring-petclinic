@@ -286,7 +286,7 @@ jobs:
           echo "sbom_file: $sbom_file"
       - name: Verify SBOM Uploaded to Image Repo
         run: |
-          cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/pipeline.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
+          cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
         shell: bash
         env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
@@ -425,9 +425,9 @@ jobs:
         
       - name: Verify Predicate Attestation
         run: |
-          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/pipeline.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
           # $(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
-  build-and-deploy:
+  Deploy_To_Aks:
     runs-on: ubuntu-latest
     needs: Attest_Verify_Predicate
     env:
