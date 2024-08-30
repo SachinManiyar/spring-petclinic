@@ -43,13 +43,7 @@ jobs:
         env:
           GH_TOKEN: ${{secrets.CR_Password}}
         run: |
-          # gh attestation download app.jar -o github
-          # wget https://github.com/saurav631/${{ env.AppName }}/attestations/1598170/download -o sigstore.json
-          # gh attestation verify github --owner saurav631 --bundle sigstore.json
-          # gh attestation verify app.jar --owner saurav631 --bundle ./saurav631-${{ env.AppName }}-attestation-1598170.sigstore.json --format=json
           gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
-          # gh attestation verify app.jar --owner saurv631 --bundle application/vnd.dev.sigstore.bundle.v0.3+json --format=json
-          # gh attestation verify sigstore.json --owner saurav631 --format=json
   Test:
     runs-on: ubuntu-latest
     env:
@@ -169,7 +163,7 @@ jobs:
     name: Sign Container Image
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: Test
+    needs: Image_Build_And_Scan
     env:
       AppName: 'spring-petclinic'
     steps:
@@ -222,12 +216,7 @@ jobs:
         run: |
           set -e  # Exit on error
           # Run the cosign attach sbom command and capture its output
-          # echo "sbom: ${{ needs.build.outputs.my_output }}"
-          # output=$(cosign attach sbom --sbom ${{ needs.build.outputs.my_output }} ghcr.io/saurav631/${{ env.AppName }}:latest) || { echo "Failed to run cosign attach sbom"; exit 1; }
-          # output=$(cosign attach sbom --sbom sbom.json ghcr.io/saurav631/${{ env.AppName }}:latest) || { echo "Failed to run cosign attach sbom"; exit 1; }
           output=$(cosign attach sbom --sbom sbom.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
-          # output=$(cosign attach sbom --sbom sbom.json ghcr.io/saurav631/${{ env.AppName }}:latest) || { echo "Failed to run cosign attach sbom"; exit 1; }
-          # cosign attest --predicate <FILE> --type <TYPE> --key cosign.key <IMAGE>
           echo "cat output --> showing output below"
           echo "output: $output"
           # Extract the SHA from the output
@@ -320,12 +309,6 @@ jobs:
           fi
           # Get the GitHub repository URL
           REPO_URL="https://github.com/${{ github.repository }}"
-          # echo "Commit ID: $COMMIT_ID"
-          # echo "Branch Name: $BRANCH_NAME"
-          # echo "Author Name: $AUTHOR_NAME"
-          # echo "Author Email: $AUTHOR_EMAIL"
-          # echo "Pull Request Number: $PR_NUMBER"
-          # echo "GitHub URL: $REPO_URL"
           # Create JSON output
           OUTPUT=$(jq -n \
             --arg commit_id "$COMMIT_ID" \
@@ -377,10 +360,6 @@ jobs:
     env:
       AppName: 'spring-petclinic'
     needs: sign
-    # strategy:
-    #   matrix:
-    #     java: [ '17' ]
-
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v3
@@ -428,6 +407,7 @@ jobs:
           # $(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: Image_Build_And_Scan
     env:
       RESOURCE_GROUP: 'K8SDemo'
       CLUSTER_NAME: 'K8SDemo'
