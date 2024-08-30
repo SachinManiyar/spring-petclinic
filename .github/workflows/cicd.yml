@@ -332,6 +332,24 @@ jobs:
         with:
           name: git-details
           path: output.json
+  Sbom_score:
+    runs-on: ubuntu-latest
+    needs: Test
+    steps:
+      - name: Check Out Source Code
+        uses: actions/checkout@v3     
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download shell script from Gist
+        run: |
+          curl -o project_creation_sbom_upload.sh https://gist.githubusercontent.com/SachinManiyar/20e5a000b24e257181228c6b3c46c004/raw/755ef0f37f0edcaa93464713daf2866a8dadcc1d/project_creation_sbom_upload.sh
+      - name: Make the script executable
+        run: chmod +x project_creation_sbom_upload.sh
+
+      - name: Run the shell script
+        run: ./project_creation_sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+ 
   vulnerability_score:
     runs-on: ubuntu-latest
     #if: false
@@ -349,6 +367,7 @@ jobs:
 
       - name: Run the shell script
         run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }}
+   
   Attest_Verify_Predicate:
     permissions:
       security-events: write
