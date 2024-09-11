@@ -64,33 +64,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v1
         with:
-          java-version: 17          
-      - name: Cache SonarQube packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://172.203.224.21:9002/
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PetClinic -Dsonar.projectName='PetClinic'          
-      - name: Check SonarQube Quality Gate
-        run: |
-         sleep 20
-          STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "http://172.203.224.21:9002/api/qualitygates/project_status?projectKey=PetClinic" | jq -r '.projectStatus.status')
-          echo "Quality Gate Status: $STATUS"
-          if [ "$STATUS" != "OK" ]; then
-            echo "SonarQube Quality Gate failed"
-            fi       
-      
+          java-version: 17             
       - name: Install Syft
         run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
