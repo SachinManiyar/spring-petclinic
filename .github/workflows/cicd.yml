@@ -92,6 +92,8 @@ jobs:
           gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
   Image_Build_And_Scan:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
     env:
       AppName: 'spring-petclinic'
     steps:    
@@ -164,7 +166,7 @@ jobs:
           cosign version
       - name: sign container image
         run: |
-          cosign sign --key env://COSIGN_KEY ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes
+          cosign sign --key env://COSIGN_KEY ${{ needs.build.outputs.image }} --yes
         shell: bash
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
@@ -180,13 +182,13 @@ jobs:
         
       - name: Verify Docker Image Signature
         run: |
-          cosign verify --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq . #--insecure-ignore-tlog #--check-claims=false
+          cosign verify --key cosign.pub ${{ needs.build.outputs.image }} | jq . #--insecure-ignore-tlog #--check-claims=false
       - name: Attach SBOM
         id: attach-sbom
         run: |
           set -e  # Exit on error
           # Run the cosign attach sbom command and capture its output
-          output=$(cosign attach sbom --sbom sbom.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
+          output=$(cosign attach sbom --sbom sbom.json ${{ needs.build.outputs.image }} 2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
           echo "cat output --> showing output below"
           echo "output: $output"
           # Extract the SHA from the output
@@ -222,8 +224,8 @@ jobs:
       - name: Directly attest SBOM with the Image
         run: |
           set -e  # Exit on error
-          # output=$(cosign attest --key env://COSIGN_KEY --type cyclonedx --predicate sbom.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
-          output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
+          # output=$(cosign attest --key env://COSIGN_KEY --type cyclonedx --predicate sbom.json ${{ needs.build.outputs.image }} --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
+          output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ${{ needs.build.outputs.image }} --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
           echo "output: $output"
         shell: bash
 
@@ -235,8 +237,8 @@ jobs:
       - name: Verfiy the attested Image
         run: |
           set -e  # Exit on error
-          # output1=$(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 -D | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
-          output1=$(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
+          # output1=$(cosign verify-attestation --key cosign.pub ${{ needs.build.outputs.image }} | jq -r .payload | base64 -D | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
+          output1=$(cosign verify-attestation --key cosign.pub ${{ needs.build.outputs.image }} | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
           echo "output: $output1"
       - name: Sign SBOM
         run: |
@@ -250,7 +252,7 @@ jobs:
       - name: upload Signed SBOM to Github Registry
         run: |
           # set -e  # Exit on error
-          output2=$(cosign upload blob -f cosign.bundle ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) #| jq .) #|| { echo "Failed to upload the blob to the Registry"; exit 1; }
+          output2=$(cosign upload blob -f cosign.bundle ${{ needs.build.outputs.image }} 2>&1) #| jq .) #|| { echo "Failed to upload the blob to the Registry"; exit 1; }
           echo "output: $output2"
           sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
           echo "sbom_file: $sbom_file"
@@ -385,9 +387,9 @@ jobs:
 
       - name: Attestation using Predicate
         run: |
-          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes
-          # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
-          # $(cat output.json | cosign attest --predicate - ghcr.io/sachinmaniyar/${{ env.AppName }}:latest --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
+          cosign attest --key env://COSIGN_KEY --predicate output.json ${{ needs.build.outputs.image }} --yes
+          # $(cosign attest --key env://COSIGN_KEY --predicate output.json ${{ needs.build.outputs.image }} --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
+          # $(cat output.json | cosign attest --predicate - ${{ needs.build.outputs.image }} --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
         shell: bash
         env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
@@ -395,8 +397,8 @@ jobs:
         
       - name: Verify Predicate Attestation
         run: |
-          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest | jq -r .payload | base64 --decode | jq .
-          # $(cosign verify-attestation --key cosign.pub ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/sachinmaniyar/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ needs.build.outputs.image }} | jq -r .payload | base64 --decode | jq .
+          # $(cosign verify-attestation --key cosign.pub ${{ needs.build.outputs.image }} 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
   Push_Image:
     runs-on: ubuntu-latest
     needs: Attest_Verify_Predicate
@@ -420,10 +422,10 @@ jobs:
           registry: ghcr.io  
       - name: Tag Docker Image
         run: |
-          docker tag docker.io/library/${{ env.AppName }}:3.3.0-SNAPSHOT ghcr.io/sachinmaniyar/${{ env.AppName }}:latest
+          docker tag ${{ needs.build.outputs.image }}  ghcr.io/sachinmaniyar/spring-petclinic:latest
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/sachinmaniyar/${{ env.AppName }}:latest      
+          docker push ghcr.io/sachinmaniyar/spring-petclinic:latest      
   Deploy_To_Aks:
     runs-on: ubuntu-latest
     needs: Push_Image
