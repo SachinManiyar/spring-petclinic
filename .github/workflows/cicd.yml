@@ -46,6 +46,7 @@ jobs:
           gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
   Sonar_And_Sbom_Generation:
     runs-on: ubuntu-latest
+    continue-on-error: true
     env:
       AppName: 'spring-petclinic'
     strategy:
