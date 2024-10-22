@@ -55,10 +55,10 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
-      - name: Build with Maven Wrapper
-        run: |
-          pwd
-          run: ./mvnw -B package
+      # - name: Build with Maven Wrapper
+      #   run: |
+      #     pwd
+      #     run: ./mvnw -B package
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
@@ -97,3 +97,12 @@ jobs:
           GH_TOKEN: ${{ secrets.CR_Password }}
         run: |
           gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
+
+
+
+
+
+
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
