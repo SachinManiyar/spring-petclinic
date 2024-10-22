@@ -115,17 +115,17 @@ jobs:
           gh attestation verify ./sbom.json --owner DHEEMAN2912 --format=json | jq .
 
      # New job for Image Build and Scan
-  Image_Build_And_Scan:
-    runs-on: ubuntu-latest
-    container:
-      image: dheeman29/new-cosign-image:v1  # Ensure the job runs inside this container
-    env:
-      AppName: 'spring-petclinic'
-    steps:    
-      # Step 1: Checkout code
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis 
+  # Image_Build_And_Scan:
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: dheeman29/new-cosign-image:v1  # Ensure the job runs inside this container
+  #   env:
+  #     AppName: 'spring-petclinic'
+  #   steps:    
+  #     # Step 1: Checkout code
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis 
 
       # Step 2: Set up JDK 17
       - name: Set up JDK 17
