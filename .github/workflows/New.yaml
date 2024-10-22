@@ -86,6 +86,11 @@ jobs:
         with:
           name: sbom
           path: sbom.json
+          
+      - name: Install GitHub CLI and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh jq
 
       - name: Generate SBOM attestation
         uses: actions/attest-sbom@v1
@@ -97,4 +102,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CR_Password }}
         run: |
-          gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
+          gh attestation verify ./sbom.json --owner DHEEMAN2912 --format=json | jq .
