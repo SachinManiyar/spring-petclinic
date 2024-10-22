@@ -1,0 +1,99 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Pipeline
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-sonar:
+    runs-on: ubuntu-latest
+    container:      
+      image: dheeman29/new-cosign-image:v1
+
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+
+    steps:      
+      # Step 1: Capture SHA256 ID of the Image
+      - name: Capture SHA256 ID of the Image
+        run: |          
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1) 
+          if [ "$REPO_DIGESTS" == "[]" ]; then
+              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+              exit 1
+          fi
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+
+      # Step 2: Verify Container SHA256 ID        
+      - name: Verify Container SHA256 ID        
+        run: |          
+          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+          
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+              echo "SHA256 mismatch. Aborting."
+              exit 1
+          fi
+          echo "SHA256 ID verified successfully."
+
+      # Build Job Steps
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build with Maven Wrapper
+        run: |
+          pwd
+          ./mvnw -B package > app.jar
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: ./app.jar
+
+      - name: Verify jar attestation
+        env:
+          GH_TOKEN: ${{ secrets.CR_Password }}
+        run: |
+          gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
+
+      # Sonar and SBOM Generation Steps
+      - name: Install Syft
+        run: |
+          curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
+          
+      - name: Generate SBOM with Syft
+        run: |
+          syft dir:. -o cyclonedx-json > sbom.json
+          
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
+      - name: Generate SBOM attestation
+        uses: actions/attest-sbom@v1
+        with:
+          subject-path: ./sbom.json
+          sbom-path: ./sbom.json
+
+      - name: Verify SBOM attestation
+        env:
+          GH_TOKEN: ${{ secrets.CR_Password }}
+        run: |
+          gh attestation verify ./sbom.json --owner sachinmaniyar --format=json | jq .
