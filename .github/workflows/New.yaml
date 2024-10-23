@@ -104,19 +104,18 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.CR_Username }}
-          password: ${{ secrets.CR_Password }}
-          registry: ghcr.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       # Step 14: Tag Docker Image
       - name: Tag Docker Image
         run: |
-          docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/dheeman2912/spring-petclinic:latest
+         docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT dheeman29/spring-petclinic:latest
 
       # Step 15: Push Docker Image
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/dheeman2912/spring-petclinic:latest
+          docker push dheeman29/spring-petclinic:latest
 
       # Step 16: Run Trivy Vulnerability Scanner
       - name: Run Trivy Vulnerability Scanner
@@ -141,11 +140,11 @@ jobs:
           chmod +x /usr/local/bin/cosign
           cosign version
 
-      # Step 19: Sign Docker Image
-      - name: Sign Docker Image
-        run: |
-          cosign sign --key env://COSIGN_KEY ghcr.io/dheeman2912/spring-petclinic:latest --yes
-        shell: bash
-        env:
-          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+      # # Step 19: Sign Docker Image
+      # - name: Sign Docker Image
+      #   run: |
+      #     cosign sign --key env://COSIGN_KEY docker.io/dheeman29/spring-petclinic:latest --yes
+      #   shell: bash
+      #   env:
+      #     COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+      #     COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
