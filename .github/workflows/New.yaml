@@ -10,8 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONTAINER_SHA256: 'a243f77bbdab08963eab094caad5fd2619ac919a2e7b5d1f9731d960db85049d' 
-    container:      
-      image: dheeman29/new-cosign-image@sha256:${{ env.CONTAINER_SHA256 }}
+    # container:      
+    #   image: dheeman29/new-cosign-image@sha256:${{ env.CONTAINER_SHA256 }}
+    steps:
+      # Step 1: Set the container image
+      - name: Set Container Image
+        id: set_image
+        run: echo "CONTAINER_IMAGE=dheeman29/new-cosign-image@sha256:${{ env.CONTAINER_SHA256 }}" >> $GITHUB_ENV
 
     permissions:
       security-events: write
@@ -20,7 +25,7 @@ jobs:
       attestations: write
       packages: write
 
-    steps:
+    # steps:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
         run: |          
