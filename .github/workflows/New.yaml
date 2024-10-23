@@ -9,7 +9,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     container:      
-      image: dheeman29/new-cosign-image:v1
+      image: dheeman29/new-cosign-image@sha256:${{ secrets.IMAGE_SHA256 }}
 
     permissions:
       security-events: write
