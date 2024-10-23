@@ -10,7 +10,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     container:
-      image: ${{ secrets.IMAGE_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}  # Using secrets
+      image: "${{ secrets.IMAGE_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}" # Using secrets
       
     permissions:
       security-events: write
