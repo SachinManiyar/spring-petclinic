@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: docker.io/dheeman29/spring-petclinic:latest
+        image: dheeman29/spring-petclinic:latest
         ports:
         - containerPort: 80
