@@ -284,36 +284,36 @@ jobs:
           name: git-details
           path: output.json
           
-      # - name:  Sbom_Upload
-      # - name: Check Out Source Code
-      #   uses: actions/checkout@v3     
-      # - name: Download file artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #    name: sbom
-      # - name: Download shell script from Gist
-      #   run: |
-      #      cat sbom.json 
-      #      curl -o project_creation_sbom_upload.sh https://gist.githubusercontent.com/DHEEMAN2912/20e5a000b24e257181228c6b3c46c004/raw/755ef0f37f0edcaa93464713daf2866a8dadcc1d/project_creation_sbom_upload.sh     - name: Make the script executable
-      #      run: chmod +x project_creation_sbom_upload.sh
+      - name:  Sbom_Upload
+      - name: Check Out Source Code
+        uses: actions/checkout@v3     
+      - name: Download file artifact
+        uses: actions/download-artifact@v4
+        with:
+         name: sbom
+      - name: Download shell script from Gist
+        run: |
+           cat sbom.json 
+           curl -o project_creation_sbom_upload.sh https://gist.githubusercontent.com/DHEEMAN2912/20e5a000b24e257181228c6b3c46c004/raw/755ef0f37f0edcaa93464713daf2866a8dadcc1d/project_creation_sbom_upload.sh     - name: Make the script executable
+           run: chmod +x project_creation_sbom_upload.sh
 
-      # - name: Run the shell script
-      #   run: ./project_creation_sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+      - name: Run the shell script
+        run: ./project_creation_sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
 
-      # - name: vulnerability_score
-      # - name: Check Out Source Code
-      #   uses: actions/checkout@v3     
-      # - name: Checkout code
-      #   uses: actions/checkout@v3
+      - name: vulnerability_score
+      - name: Check Out Source Code
+        uses: actions/checkout@v3     
+      - name: Checkout code
+        uses: actions/checkout@v3
       
-      # - name: Download shell script from Gist
-      #    run:|
-      #     curl -o vulnerability_score.sh https://gist.githubusercontent.com/SachinManiyar/50c889020f611cc0e2bad3543396992a/raw/b13972079aa046ffc7ecbc4e49c9888d107718e6/vulnerability_score.sh
-      # - name: Make the script executable
-      #   run: chmod +x vulnerability_score.sh
+      - name: Download shell script from Gist
+         run:|
+          curl -o vulnerability_score.sh https://gist.githubusercontent.com/SachinManiyar/50c889020f611cc0e2bad3543396992a/raw/b13972079aa046ffc7ecbc4e49c9888d107718e6/vulnerability_score.sh
+      - name: Make the script executable
+        run: chmod +x vulnerability_score.sh
 
-      # - name: Run the shell script
-      #   run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }}
+      - name: Run the shell script
+        run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }}
 
     
 
