@@ -376,15 +376,50 @@ jobs:
       - name: Verify Predicate Attestation
         run: |
           cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub docker.io/dheeman29/spring-petclinic:latest | jq -r .payload | base64 --decode | jq .
+          
 
-      - name: Deploy To Aks
-      - uses: actions/checkout@v4
+  Deploy_To_Aks:
+    runs-on: ubuntu-latest
+    container:
+      image: dheeman29/new-cosign-image:v1
+    needs: Attest_Verify_Predicate
+    steps:
+      # Step 1: Capture SHA256 ID of the Image
+      - name: Capture SHA256 ID of the Image
+        run: |          
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1) 
+          if [ "$REPO_DIGESTS" == "[]" ]; then
+              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+              exit 1
+          fi
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+
+      # Step 2: Verify Container SHA256 ID        
+      - name: Verify Container SHA256 ID        
+        run: |          
+          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+          
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+              echo "SHA256 mismatch. Aborting."
+              exit 1
+          fi
+          echo "SHA256 ID verified successfully."
+
+      # Step 3: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: azure/login@v2
+          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+
+      # Step 4: Login to Azure
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Step 5: Run Azure CLI commands
       - name: Azure CLI script
         uses: azure/cli@v2
         with:
@@ -392,20 +427,39 @@ jobs:
           inlineScript: |
             az account show
             # Use kubelogin to configure your kubeconfig for Azure auth
-            
-      - name: Set up kubelogin for non-interactive login
+
+      # Step 6: Set up kubelogin for non-interactive login
+      - name: Set up kubelogin
         uses: azure/use-kubelogin@v1
         with:
           kubelogin-version: 'v0.0.25'
 
-        # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
+      # Step 7: Retrieve Kubernetes context
       - name: Get K8s context
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.RESOURCE_GROUP }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
           admin: 'false'
-          use-kubelogin: 'true'       
+          use-kubelogin: 'true'
+          
+      - name: Verify the AKS Cluster via Managed Identity of the cluster
+        run: |
+          # Get the Managed Identity Principal ID for the AKS cluster
+          CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv)
+          echo "CLUSTER_MANAGED_ID=$CLUSTER_MANAGED_ID" >> $GITHUB_ENV
+
+          # Verify the Managed Identity against the expected value
+          EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
+          
+          if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
+            echo "Error: Managed Identity does not match. Aborting deployment."
+            exit 1
+          else
+            echo "Managed Identity verified successfully."
+          fi
+
+      # Step 8: Deploy to AKS
       - name: Deploy to AKS
         run: |
           kubectl apply -f K8s/deployment.yaml
