@@ -433,11 +433,11 @@ jobs:
       # Step 5: Run Azure CLI commands
       - name: Azure CLI script
         uses: azure/cli@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az account show
-            # Use kubelogin to configure your kubeconfig for Azure auth
+        run: |
+          az account show
+          # Use kubelogin to configure your kubeconfig for Azure auth
+          az aks get-credentials --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }}
+
 
       # Step 6: Set up kubelogin for non-interactive login
       - name: Set up kubelogin
