@@ -140,11 +140,25 @@ jobs:
           chmod +x /usr/local/bin/cosign
           cosign version
 
-      # # Step 19: Sign Docker Image
-      # - name: Sign Docker Image
-      #   run: |
-      #     cosign sign --key env://COSIGN_KEY docker.io/dheeman29/spring-petclinic:latest --yes
-      #   shell: bash
-      #   env:
-      #     COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-      #     COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+      # Step 19: Sign Docker Image
+      - name: Sign Docker Image
+        run: |
+          echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key  # Ensure Windows line endings are handled
+          chmod 600 cosign.key  # Set permissions to read/write only for the owner
+          cosign sign --key cosign.key docker.io/dheeman29/spring-petclinic:latest --yes
+        shell: bash
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+      - name: Public Key Creation
+        run: |
+          cosign public-key --key env://COSIGN_KEY > cosign.pub
+        shell: bash
+        env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+        
+      - name: Verify Docker Image Signature
+        run: |
+          cosign verify --key cosign.pub docker.io/dheeman29/spring-petclinic:latest | jq . #--insecure-ignore-tlog #--check-claims=false
