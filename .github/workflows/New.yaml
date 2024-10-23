@@ -296,7 +296,7 @@ jobs:
       contents: read
       attestations: write
       packages: write
-
+    needs: build-and-scan
     steps:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
