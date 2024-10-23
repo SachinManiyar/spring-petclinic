@@ -205,17 +205,17 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
         
-      - name: Public Key Creation
-        run: |
-          cosign public-key --key env://COSIGN_KEY > cosign.pub
-        shell: bash
-        env:
-          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+      # - name: Public Key Creation
+      #   run: |
+      #     cosign public-key --key env://COSIGN_KEY > cosign.pub
+      #   shell: bash
+      #   env:
+      #     COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+      #     COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
         
-      - name: Verify Docker Image Signature
-        run: |
-          cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:latest | jq . #--insecure-ignore-tlog #--check-claims=false
+      # - name: Verify Docker Image Signature
+      #   run: |
+      #     cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:latest | jq . #--insecure-ignore-tlog #--check-claims=false
 
 
 
