@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: dheeman29/spring-petclinic:latest
+        image: ghcr.io/dheeman2912/spring-petclinic
         ports:
         - containerPort: 80
