@@ -17,3 +17,5 @@ spec:
         image: ghcr.io/dheeman2912/spring-petclinic
         ports:
         - containerPort: 80
+      imagePullSecrets:
+      - name: ghcr-secret
