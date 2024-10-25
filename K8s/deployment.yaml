@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: dheeman29/springbootimage29
+        image: dheeman29/springbootimage29:409
         ports:
         - containerPort: 80
       # imagePullSecrets:
