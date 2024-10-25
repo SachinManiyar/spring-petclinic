@@ -308,7 +308,7 @@ jobs:
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
               exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/new-cosign-image:v1| sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
@@ -395,7 +395,7 @@ jobs:
             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
             exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/new-cosign-image:v1| sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1| sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
