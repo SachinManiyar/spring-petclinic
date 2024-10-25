@@ -64,20 +64,24 @@ jobs:
      - name: Build with Maven Wrapper
        run: |
           pwd
-          ./mvnw -B package > app.jar
+           ./mvnw -B package
 
       # Step 6: Generate artifact attestation
      - name: Generate artifact attestation
        uses: actions/attest-build-provenance@v1
        with:
-          subject-path: ./app.jar
+          subject-path: target/*.jar
+          
+     - name: Install jq
+       run: sudo apt-get install jq
+
 
       # Step 7: Verify JAR attestation
      - name: Verify JAR Attestation
        env:
           GH_TOKEN: ${{ secrets.CR_Password }}
        run: |
-          gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
+          gh attestation verify target/*.jar --owner dheeman2912 --format=json | jq .
 
       # Step 5: Install Syft for SBOM generation
      - name: Install Syft
