@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: dheeman29/springbootimage29:409
+        image: docker pull dheeman29/go-web-app:10244370821
         ports:
-        - containerPort: 80
+        - containerPort: 8080
       # imagePullSecrets:
       # - name: ghcr-secret
