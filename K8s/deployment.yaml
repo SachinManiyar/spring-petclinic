@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: ghcr.io/dheeman2912/spring-petclinic
+        image: dheeman29/springbootimage29
         ports:
         - containerPort: 80
-      imagePullSecrets:
-      - name: ghcr-secret
+      # imagePullSecrets:
+      # - name: ghcr-secret
