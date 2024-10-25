@@ -1,4 +1,4 @@
-name: Combined Pipelinee
+name: Combined Pipeline
 
 on:
   push:
@@ -9,8 +9,12 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_SHA: "${{ secrets.CONTAINER_IMAGE }}" # Add the SHA value here without exposing it directly in the container config
     container:
-      image: dheeman29/new-cosign-image:v1
+      image: dheeman29/new-cosign-image@sha256:${{ env.IMAGE_SHA }}
+    # container:
+    #   image: dheeman29/new-cosign-image:v1
       
     permissions:
       security-events: write
