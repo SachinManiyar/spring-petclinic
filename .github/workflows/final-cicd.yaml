@@ -19,11 +19,24 @@ jobs:
       attestations: write
       packages: write
 
+    strategy:
+      matrix:
+        java: [ '17' ]
 
     steps:
+
+     - uses: actions/checkout@v4
+
+      # Step 2: Set up JDK for Maven build
+     - name: Set up JDK ${{ matrix.java }}
+       uses: actions/setup-java@v4
+       with:
+          java-version: ${{ matrix.java }}
+          distribution: 'adopt'
+          cache: maven
       # Step 1: Capture SHA256 ID of the Image
-      - name: Capture SHA256 ID of the Image
-        run: |          
+     - name: Capture SHA256 ID of the Image
+       run: |          
           REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1 ) 
           if [ "$REPO_DIGESTS" == "[]" ]; then
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
@@ -33,8 +46,8 @@ jobs:
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
-      - name: Verify Container SHA256 ID        
-        run: |          
+     - name: Verify Container SHA256 ID        
+       run: |          
           EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
           ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
@@ -43,68 +56,79 @@ jobs:
               exit 1
           fi
           echo "SHA256 ID verified successfully."
+          
+     - name: Install GitHub CLI and jq
+       run: |
+          sudo apt-get install -y gh jq
 
-      # Step 3: Checkout Code
-      - uses: actions/checkout@v4
+     - name: Build with Maven Wrapper
+       run: |
+          pwd
+          ./mvnw -B package > app.jar
 
-      # Step 4: Set up JDK 17
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'adopt'
-          cache: maven
+      # Step 6: Generate artifact attestation
+     - name: Generate artifact attestation
+       uses: actions/attest-build-provenance@v1
+       with:
+          subject-path: ./app.jar
+
+      # Step 7: Verify JAR attestation
+     - name: Verify JAR Attestation
+       env:
+          GH_TOKEN: ${{ secrets.CR_Password }}
+       run: |
+          gh attestation verify app.jar --owner sachinmaniyar --format=json | jq .
 
       # Step 5: Install Syft for SBOM generation
-      - name: Install Syft
-        run: |
+     - name: Install Syft
+       run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
 
       # Step 6: Generate SBOM with Syft
-      - name: Generate SBOM with Syft
-        run: |
+     - name: Generate SBOM with Syft
+       run: |
           syft dir:. -o cyclonedx-json > sbom.json
 
       # Step 7: Upload SBOM
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v4
-        with:
+     - name: Upload SBOM
+       uses: actions/upload-artifact@v4
+       with:
           name: sbom
           path: sbom.json
 
       # Step 8: Set up GitHub CLI Repository
-      - name: Set up GitHub CLI Repository
-        run: |
+     - name: Set up GitHub CLI Repository
+       run: |
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
           sudo apt-get update
 
       # Step 9: Install GitHub CLI and jq
-      - name: Install GitHub CLI and jq
-        run: |
+     - name: Install GitHub CLI and jq
+       run: |
           sudo apt-get install -y gh jq
 
       # Step 10: Generate SBOM attestation
-      - name: Generate SBOM attestation
-        uses: actions/attest-sbom@v1
-        with:
+     - name: Generate SBOM attestation
+       uses: actions/attest-sbom@v1
+       with:
           subject-path: ./sbom.json
           sbom-path: ./sbom.json
 
       # Step 11: Verify SBOM attestation
-      - name: Verify SBOM attestation
-        env:
+     - name: Verify SBOM attestation
+       env:
           GH_TOKEN: ${{ secrets.CR_Password }}
-        run: |
+       run: |
           gh attestation verify ./sbom.json --owner dheeman2912 --format=json | jq .
 
       # Step 12: Build Docker Image using Maven
-      - name: Build Docker Image
-        run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
+     - name: Build Docker Image
+       run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
+     - name: Log in to GitHub Container Registry
+       uses: docker/login-action@v2
+       with:
           username: ${{ secrets.CR_Username }}
           #username: ${{ github.actor }}
           password: ${{ secrets.CR_Password }}
@@ -112,20 +136,20 @@ jobs:
           registry: ghcr.io
 
       # Step 14: Tag Docker Image
-      - name: Tag Docker Image
-        run: |
+     - name: Tag Docker Image
+       run: |
          docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/dheeman2912/spring-petclinic:latest
 
       # Step 15: Push Docker Image
-      - name: Push Docker Image
-        run: |
+     - name: Push Docker Image
+       run: |
           docker push  ghcr.io/dheeman2912/spring-petclinic:latest
           docker inspect  ghcr.io/dheeman2912/spring-petclinic:latest
 
       # Step 16: Run Trivy Vulnerability Scanner
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-        with:
+     - name: Run Trivy Vulnerability Scanner
+       uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+       with:
           image-ref: 'ghcr.io/dheeman2912/spring-petclinic:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
@@ -133,43 +157,43 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       # Step 17: Upload Trivy Scan Results to GitHub Security Tab
-      - name: Upload Trivy Scan Results to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
+     - name: Upload Trivy Scan Results to GitHub Security Tab
+       uses: github/codeql-action/upload-sarif@v3
+       with:
           sarif_file: 'trivy-results.sarif'
 
       # Step 18: Install Cosign CLI
-      - name: Install Cosign CLI
-        run: |
+     - name: Install Cosign CLI
+       run: |
           curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
           chmod +x /usr/local/bin/cosign
           cosign version
 
       # Step 19: Sign Docker Image
-      - name: Sign Docker Image
-        run: |
+     - name: Sign Docker Image
+       run: |
           echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key  # Ensure Windows line endings are handled
           chmod 600 cosign.key  # Set permissions to read/write only for the owner
           cosign sign --key env://COSIGN_KEY ghcr.io/dheeman2912/spring-petclinic:latest --yes
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-      - name: Public Key Creation
-        run: |
+     - name: Public Key Creation
+       run: |
           cosign public-key --key env://COSIGN_KEY > cosign.pub
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
         
-      - name: Verify Docker Image Signature
-        run: |
+     - name: Verify Docker Image Signature
+       run: |
           cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:latest | jq . #--insecure-ignore-tlog #--check-claims=false
 
-      - name: Attach SBOM
-        run: |
+     - name: Attach SBOM
+       run: |
           set -e  # Exit on error
           # Run the cosign attach sbom command and capture its output
           output=$(cosign attach sbom --sbom sbom.json ghcr.io/dheeman2912/spring-petclinic:latest 2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
@@ -186,8 +210,8 @@ jobs:
           # Set the extracted SHA as an environment variable
           echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
 
-      - name: Sign the SBOM attached with the Image
-        run: |
+     - name: Sign the SBOM attached with the Image
+       run: |
           set -e  # Exit on error
           # Use the environment variable to construct the command
           if [ -z "$SBOM_FILENAME" ]; then
@@ -196,60 +220,60 @@ jobs:
           fi
           echo "Signing SBOM with filename: $SBOM_FILENAME"
           cosign sign --key env://COSIGN_KEY   ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME --yes || { echo "Failed to sign with SBOM"; exit 1; }
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-      - name: Verify Sign of SBOM attached with the Image
-        run: |
+     - name: Verify Sign of SBOM attached with the Image
+       run: |
           set -e  # Exit on error
           cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME | jq . || { echo "Failed to verify SBOM Sign"; exit 1; }
 
-      - name: Directly attest SBOM with the Image
-        run: |
+     - name: Directly attest SBOM with the Image
+       run: |
           set -e  # Exit on error
           output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ghcr.io/dheeman2912/spring-petclinic:latest --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
           echo "output: $output"
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-      - name: Verfiy the attested Image
-        run: |
+     - name: Verfiy the attested Image
+       run: |
           set -e  # Exit on error
           output1=$(cosign verify-attestation --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:latest | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
           echo "output: $output1"
 
-      - name: Sign SBOM
-        run: |
+     - name: Sign SBOM
+       run: |
           cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-      - name: upload Signed SBOM to Docker Hub
-        run: |
+     - name: upload Signed SBOM to Docker Hub
+       run: |
           output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic:latest 2>&1)
           echo "output: $output2"
           sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
           echo "sbom_file: $sbom_file"
 
-      - name: Verify SBOM Uploaded to Image Repo
-        run: |
+     - name: Verify SBOM Uploaded to Image Repo
+       run: |
           cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub 2>&1
-        shell: bash
-        env:
+       shell: bash
+       env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-      - name: Set Git safe directory
-        run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
+     - name: Set Git safe directory
+       run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
 
-      - name: Fetch commit details
-        run: |
+     - name: Fetch commit details
+       run: |
           # Get the commit ID
           COMMIT_ID=$(git rev-parse HEAD)
           # Get the branch name
@@ -283,9 +307,9 @@ jobs:
           echo "$OUTPUT" > output.json
           # Print the contents of the JSON file
           cat output.json
-      - name: Upload JSON file
-        uses: actions/upload-artifact@v3
-        with:
+     - name: Upload JSON file
+       uses: actions/upload-artifact@v3
+       with:
           name: git-details
           path: output.json
           
