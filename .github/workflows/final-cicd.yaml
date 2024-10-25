@@ -10,7 +10,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     container:
-      image: dheeman29/new-cosign-image:v1 
+      image: "${{ secrets.CONTAINER_IMAGE_NAME }}"
       
     permissions:
       security-events: write
@@ -24,12 +24,12 @@ jobs:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
         run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1) 
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' "${{ secrets.CONTAINER_IMAGE_NAME }}" ) 
           if [ "$REPO_DIGESTS" == "[]" ]; then
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
               exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' "${{ secrets.CONTAINER_IMAGE_NAME }}" | sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
@@ -122,21 +122,21 @@ jobs:
           docker push  ghcr.io/dheeman2912/spring-petclinic:latest
           docker inspect  ghcr.io/dheeman2912/spring-petclinic:latest
 
-      # # Step 16: Run Trivy Vulnerability Scanner
-      # - name: Run Trivy Vulnerability Scanner
-      #   uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-      #   with:
-      #     image-ref: 'ghcr.io/dheeman2912/spring-petclinic:latest'
-      #     format: 'template'
-      #     template: '@/contrib/sarif.tpl'
-      #     output: 'trivy-results.sarif'
-      #     severity: 'CRITICAL,HIGH'
+      # Step 16: Run Trivy Vulnerability Scanner
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          image-ref: 'ghcr.io/dheeman2912/spring-petclinic:latest'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
-      # # Step 17: Upload Trivy Scan Results to GitHub Security Tab
-      # - name: Upload Trivy Scan Results to GitHub Security Tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   with:
-      #     sarif_file: 'trivy-results.sarif'
+      # Step 17: Upload Trivy Scan Results to GitHub Security Tab
+      - name: Upload Trivy Scan Results to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
 
       # Step 18: Install Cosign CLI
       - name: Install Cosign CLI
@@ -311,7 +311,7 @@ jobs:
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
               exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'"${{ secrets.CONTAINER_IMAGE_NAME }}"| sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
@@ -398,7 +398,7 @@ jobs:
             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
             exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'"${{ secrets.CONTAINER_IMAGE_NAME }}"| sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
