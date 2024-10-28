@@ -142,7 +142,8 @@ jobs:
        shell: bash
 
      - name: Debug IMAGE_SHA
-       run: echo "IMAGE_SHA is $IMAGE_SHA" 
+       run: echo "IMAGE_SHA is ${{ env.IMAGE_SHA }}"  # Access the variable correctly
+       shell: bash
        
      
 
