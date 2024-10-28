@@ -43,7 +43,7 @@ jobs:
        env:
           GH_TOKEN: ${{ secrets.CR_Password }}
        run: |
-          gh attestation verify app.jar --owner dheeman2912 --format=json | jq .r
+          gh attestation verify app.jar --owner dheeman2912 --format=json | jq .
 
           
     
