@@ -138,7 +138,7 @@ jobs:
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
           echo "IMAGE_SHA=${IMAGE_SHA}" >> $GITHUB_ENV
-          echo "IMAGE_SHA=${IMAGE_SHA}" >> $GITHUB_OUTPUT 
+          echo "::set-output name=image_sha::${IMAGE_SHA}"  # Set as job output
        shell: bash
        
      
@@ -309,6 +309,8 @@ jobs:
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_SHA: ${{ needs.build.outputs.image_sha }}
     # container:      
     #   image: dheeman29/new-cosign-image:v1
 
@@ -388,7 +390,7 @@ jobs:
 
       - name: Attestation using Predicate
         run: |
-          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.get_image_sha.outputs.IMAGE_SHA }} --yes
+          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@IMAGE_SHA  --yes
           # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
           # $(cat output.json | cosign attest --predicate - ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
         shell: bash
@@ -398,7 +400,7 @@ jobs:
 
       - name: Verify Predicate Attestation
         run: |
-          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  | jq -r .payload | base64 --decode | jq .
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA  | jq -r .payload | base64 --decode | jq .
           
 
   Deploy_To_Aks:
