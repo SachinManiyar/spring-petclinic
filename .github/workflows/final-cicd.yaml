@@ -165,7 +165,7 @@ jobs:
        run: |
           echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key  # Ensure Windows line endings are handled
           chmod 600 cosign.key  # Set permissions to read/write only for the owner
-          cosign sign --key cosign.key ghcr.io/dheeman2912/spring-petclinic@sha256:${{ env.IMAGE_SHA }} --yes
+          cosign sign --key cosign.key ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} --yes
        shell: bash
        env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
