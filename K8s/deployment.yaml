@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: dheeman29/go-web-app:10244370821
+        image: ghcr.io/dheeman2912/spring-petclinic:v1
         ports:
         - containerPort: 8080
-      # imagePullSecrets:
-      # - name: ghcr-secret
+      imagePullSecrets:
+      - name: ghcr-secret
