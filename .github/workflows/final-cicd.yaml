@@ -139,9 +139,11 @@ jobs:
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
        shell: bash
-    # Optional: Print the SHA256 of the Image
+       
+        # Step 20: Print SHA256 of Docker Image
      - name: Print SHA256 of Docker Image
-       run: echo "Image SHA256: ${{ env.IMAGE_SHA }}"
+       run: echo "Image SHA256:${{ env.IMAGE_SHA }}"
+
 
      # - name: Install Trivy for Vulnerability Scanning
      #   run: |
