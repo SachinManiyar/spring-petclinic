@@ -138,8 +138,7 @@ jobs:
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
           echo "IMAGE_SHA=${IMAGE_SHA}" >> $GITHUB_ENV
-          echo "::set-output name=image_sha::${IMAGE_SHA}"  # Set as job output
-       shell: bash
+          shell: bash
        
      
 
@@ -309,6 +308,8 @@ jobs:
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
+    env:
+      AppName: '8e616fe90e70f755dabe86072936688d02e98d9e16f40346dde5b9475ab79d74'
     # env:
     #   IMAGE_SHA: ${{ needs.build.outputs.image_sha }}
     # container:      
@@ -390,7 +391,7 @@ jobs:
 
       - name: Attestation using Predicate
         run: |
-          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@{{ needs.build-and-scan.outputs.image_sha }}  --yes
+          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.AppName}}  --yes
           # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
           # $(cat output.json | cosign attest --predicate - ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
         shell: bash
@@ -400,7 +401,7 @@ jobs:
 
       - name: Verify Predicate Attestation
         run: |
-          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@{{ needs.build-and-scan.outputs.image_sha }}  | jq -r .payload | base64 --decode | jq .
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@{{ env. AppName }}  | jq -r .payload | base64 --decode | jq .
           
 
   Deploy_To_Aks:
