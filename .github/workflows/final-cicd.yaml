@@ -3,7 +3,7 @@ name: Combined Pipeline
 on:
   push:
     branches:
-      - test
+      # - test
   workflow_dispatch:
 
 jobs:
