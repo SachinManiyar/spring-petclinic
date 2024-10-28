@@ -82,15 +82,17 @@ jobs:
 
 
       # Step 8: Set up GitHub CLI Repository
-     - name: Install GitHub CLI
+     - name: Install GitHub CLI and jq
        run: |
-            # Download and install GitHub CLI keyring and source list
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
-            # Update and install GitHub CLI
-            apt-get update
-            apt-get install -y gh
+        # Download and install GitHub CLI keyring and source list
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+        
+        # Update and install GitHub CLI and jq
+        apt-get update
+        apt-get install -y gh jq
        shell: bash
+
 
       # Step 9: Install GitHub CLI and jq
      - name: Install GitHub CLI and jq
