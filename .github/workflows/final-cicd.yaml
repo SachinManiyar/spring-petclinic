@@ -1,4 +1,4 @@
-name: Combined Pipeline
+name: Combined Pipelinee
 
 on:
   push:
