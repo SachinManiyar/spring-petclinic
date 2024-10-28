@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: dheeman29/new_image:v3
+    outputs:
+      image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
     permissions:
       security-events: write
@@ -135,7 +137,8 @@ jobs:
        id: get_image_sha
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
-          echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          # echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "::set-output name=image_sha::$IMAGE_SHA"
        shell: bash
        
      
@@ -414,7 +417,7 @@ jobs:
 
       - name: Attestation using Predicate
         run: |
-          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes
+          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }}  --yes
           # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
           # $(cat output.json | cosign attest --predicate - ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
         shell: bash
