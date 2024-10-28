@@ -247,12 +247,6 @@ jobs:
 
      - name: upload Signed SBOM to GitHub
        run: |
-          # output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  2>&1)
-          # echo "output: $output2"
-          # sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-          # echo "sbom_file: $sbom_file"
-          
-          # Run the cosign upload command and capture output and errors
           output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1)
     
           # Print the output for debugging purposes
