@@ -309,8 +309,8 @@ jobs:
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_SHA: ${{ needs.build.outputs.image_sha }}
+    # env:
+    #   IMAGE_SHA: ${{ needs.build.outputs.image_sha }}
     # container:      
     #   image: dheeman29/new-cosign-image:v1
 
