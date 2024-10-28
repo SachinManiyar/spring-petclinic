@@ -68,7 +68,7 @@ jobs:
           # ENV MAVEN_HOME /usr/share/maven
           # ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
           mvn -version
-          /usr/bin/mvn -X package > app.jar
+          /usr/bin/mvn clean package > app.jar
      - name: Generate artifact attestation
        uses: actions/attest-build-provenance@v1
        with:
@@ -317,10 +317,8 @@ jobs:
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
-    env:
-      PR_NUMBER: ${{ needs.build-and-scan.outputs.pr-number }}
-    # container:      
-    #   image:  dheeman29/new_image:v3
+    container:      
+      image:  dheeman29/new_image:v3
 
     permissions:
       security-events: write
