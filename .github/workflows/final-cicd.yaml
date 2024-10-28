@@ -65,8 +65,8 @@ jobs:
           # ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
           
 
-          ENV MAVEN_HOME /usr/share/maven
-          ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+          # ENV MAVEN_HOME /usr/share/maven
+          # ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
           mvn -version
           /usr/bin/mvn -X package > app.jar
      - name: Generate artifact attestation
