@@ -245,12 +245,30 @@ jobs:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-     - name: upload Signed SBOM to Docker Hub
+     - name: upload Signed SBOM to GitHub
        run: |
-          output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  2>&1)
-          echo "output: $output2"
-          sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-          echo "sbom_file: $sbom_file"
+          # output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  2>&1)
+          # echo "output: $output2"
+          # sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
+          # echo "sbom_file: $sbom_file"
+          
+          # Run the cosign upload command and capture output and errors
+          output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1)
+    
+          # Print the output for debugging purposes
+          echo "Cosign upload output: $output2"
+    
+          # Extract the SBOM digest from the output
+          sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1)
+    
+          # Check if sbom_file is empty, meaning extraction failed
+          if [[ -z "$sbom_file" ]]; then
+            echo "Failed to extract SBOM filename from output. Cosign upload may have failed."
+            exit 1
+          fi
+      
+          # Output the extracted SBOM filename for confirmation
+          echo "Extracted sbom_file: $sbom_file"
 
      - name: Verify SBOM Uploaded to Image Repo
        run: |
