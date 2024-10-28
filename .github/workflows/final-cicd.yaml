@@ -93,12 +93,6 @@ jobs:
         apt-get install -y gh jq
        shell: bash
 
-
-      # Step 9: Install GitHub CLI and jq
-     - name: Install GitHub CLI and jq
-       run: |
-          sudo apt-get install -y gh jq
-
       # Step 10: Generate SBOM attestation
      - name: Generate SBOM attestation
        uses: actions/attest-sbom@v1
