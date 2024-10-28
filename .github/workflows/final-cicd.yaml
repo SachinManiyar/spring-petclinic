@@ -248,25 +248,25 @@ jobs:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
           
-     - name: Authenticate GitHub Container Registry
-       env:
-        CR_PAT: ${{ secrets.CR_Password }}
-       run: |
-        echo $CR_PAT | cosign login ghcr.io -u ${{ github.actor }} --password-stdin
+     # - name: Authenticate GitHub Container Registry
+     #   env:
+     #    CR_PAT: ${{ secrets.CR_Password }}
+     #   run: |
+     #    echo $CR_PAT | cosign login ghcr.io -u ${{ github.actor }} --password-stdin
     
-     - name: Upload Signed SBOM to GitHub
-       env:
-        IMAGE_SHA: ${{ env.IMAGE_SHA }}
-       run: |
-        # Ensure cosign.experimental mode
-        COSIGN_EXPERIMENTAL=1
-        output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+     # - name: Upload Signed SBOM to GitHub
+     #   env:
+     #    IMAGE_SHA: ${{ env.IMAGE_SHA }}
+     #   run: |
+     #    # Ensure cosign.experimental mode
+     #    COSIGN_EXPERIMENTAL=1
+     #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
         
-        # Print output and extract SBOM filename
-        echo "output: $output2"
-        sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-        echo "sbom_file: $sbom_file"
-       shell: bash
+     #    # Print output and extract SBOM filename
+     #    echo "output: $output2"
+     #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
+     #    echo "sbom_file: $sbom_file"
+     #   shell: bash
 
 
      # - name: upload Signed SBOM to GitHub
@@ -277,13 +277,13 @@ jobs:
      #    echo "sbom_file: $sbom_file"
 
 
-     - name: Verify SBOM Uploaded to Image Repo
-       run: |
-          cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub 2>&1
-       shell: bash
-       env:
-          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     # - name: Verify SBOM Uploaded to Image Repo
+     #   run: |
+     #      cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub 2>&1
+     #   shell: bash
+     #   env:
+     #      COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+     #      COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
      - name: Set Git safe directory
        run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
