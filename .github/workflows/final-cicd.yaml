@@ -140,6 +140,9 @@ jobs:
           # echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
           echo "::set-output name=image_sha::$IMAGE_SHA"
        shell: bash
+
+     - name: Debug IMAGE_SHA
+       run: echo "IMAGE_SHA is $IMAGE_SHA" 
        
      
 
