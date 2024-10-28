@@ -143,13 +143,18 @@ jobs:
 
      - name: Install Trivy for Vulnerability Scanning
        run: |
-          sudo apt-get install -y wget
+          # Install wget and download Trivy package
+          apt-get install -y wget
           wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb
-          sudo dpkg -i trivy_0.19.2_Linux-64bit.deb
+          # Install Trivy
+          dpkg -i trivy_0.19.2_Linux-64bit.deb
+       shell: bash
 
      - name: Scan Docker Image with Trivy
        run: |
-          trivy image ghcr.io/dheeman2912/spring-petclinic:v1
+        trivy image ghcr.io/dheeman2912/spring-petclinic:v1
+       shell: bash
+
     
       # Step 18: Install Cosign CLI
      - name: Install Cosign CLI
