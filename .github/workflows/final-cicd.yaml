@@ -61,6 +61,7 @@ jobs:
           pwd
           which java 
           echo $JAVA_HOME
+          ls -la /usr/share/maven
           mvn -version
           sudo /usr/share/maven -X package > app.jar
      - name: Generate artifact attestation
