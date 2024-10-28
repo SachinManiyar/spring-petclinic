@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
     permissions:
       security-events: write
       id-token: write
@@ -19,23 +22,27 @@ jobs:
     steps:
 
      - uses: actions/checkout@v4
+     - name: Set up JDK ${{ matrix.java }}
+       uses: actions/setup-java@v4
+       with:
+          java-version: ${{ matrix.java }}
+          distribution: 'adopt'
+          cache: maven
+
      - name: Build with Maven Wrapper
        run: |
           pwd
-          which java 
-          echo $JAVA_HOME
-          ls -la /usr/share/maven
-          # ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-          
-
-          # ENV MAVEN_HOME /usr/share/maven
-          # ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
-          mvn -version
-          /usr/bin/mvn clean package > app.jar
+          ./mvnw -B package > app.jar
      - name: Generate artifact attestation
        uses: actions/attest-build-provenance@v1
        with:
           subject-path: ./app.jar
+
+     - name: verify jar attesttion
+       env:
+          GH_TOKEN: ${{secrets.CR_Password}}
+       run: |
+          gh attestation verify app.jar --owner dheeman2912 --format=json | jq .r
           
     
       # Step 5: Install Syft for SBOM generation
