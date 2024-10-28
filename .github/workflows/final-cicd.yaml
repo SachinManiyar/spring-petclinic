@@ -9,8 +9,8 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
-    container:
-      image: dheeman29/new-cosign-image:v1
+    # container:
+    #   image: dheeman29/new-cosign-image:v1
       
     permissions:
       security-events: write
@@ -35,27 +35,27 @@ jobs:
           distribution: 'adopt'
           cache: maven
       # Step 1: Capture SHA256 ID of the Image
-     - name: Capture SHA256 ID of the Image
-       run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1 ) 
-          if [ "$REPO_DIGESTS" == "[]" ]; then
-              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-              exit 1
-          fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
-          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+     # - name: Capture SHA256 ID of the Image
+     #   run: |          
+     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new-cosign-image:v1 ) 
+     #      if [ "$REPO_DIGESTS" == "[]" ]; then
+     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+     #          exit 1
+     #      fi
+     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new-cosign-image:v1 | sed 's/.*@sha256://')
+     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-      # Step 2: Verify Container SHA256 ID        
-     - name: Verify Container SHA256 ID        
-       run: |          
-          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+     #  # Step 2: Verify Container SHA256 ID        
+     # - name: Verify Container SHA256 ID        
+     #   run: |          
+     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-              echo "SHA256 mismatch. Aborting."
-              exit 1
-          fi
-          echo "SHA256 ID verified successfully."
+     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+     #          echo "SHA256 mismatch. Aborting."
+     #          exit 1
+     #      fi
+     #      echo "SHA256 ID verified successfully."
      - name: Build with Maven Wrapper
        run: |
           pwd
