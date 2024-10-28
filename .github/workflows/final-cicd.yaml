@@ -247,13 +247,34 @@ jobs:
        env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
-
-     - name: upload Signed SBOM to GitHub
+          
+     - name: Authenticate GitHub Container Registry
+       env:
+        CR_PAT: ${{ secrets.CR_Password }}
        run: |
-        output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+        echo $CR_PAT | cosign login ghcr.io -u ${{ github.actor }} --password-stdin
+    
+     - name: Upload Signed SBOM to GitHub
+       env:
+        IMAGE_SHA: ${{ env.IMAGE_SHA }}
+       run: |
+        # Ensure cosign.experimental mode
+        COSIGN_EXPERIMENTAL=1
+        output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+        
+        # Print output and extract SBOM filename
         echo "output: $output2"
         sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
         echo "sbom_file: $sbom_file"
+       shell: bash
+
+
+     # - name: upload Signed SBOM to GitHub
+     #   run: |
+     #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+     #    echo "output: $output2"
+     #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
+     #    echo "sbom_file: $sbom_file"
 
 
      - name: Verify SBOM Uploaded to Image Repo
