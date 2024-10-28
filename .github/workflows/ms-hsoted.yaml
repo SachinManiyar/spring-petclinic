@@ -1,4 +1,4 @@
-name: Combined Pipelinee
+name: Combined Pipeline
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
+        java: ['17']
     permissions:
       security-events: write
       id-token: write
@@ -20,8 +20,8 @@ jobs:
       packages: write
 
     steps:
-
      - uses: actions/checkout@v4
+      
      - name: Set up JDK ${{ matrix.java }}
        uses: actions/setup-java@v4
        with:
@@ -33,16 +33,18 @@ jobs:
        run: |
           pwd
           ./mvnw -B package > app.jar
+          
      - name: Generate artifact attestation
        uses: actions/attest-build-provenance@v1
        with:
           subject-path: ./app.jar
 
-     - name: verify jar attesttion
+     - name: Verify JAR attestation
        env:
-          GH_TOKEN: ${{secrets.CR_Password}}
+          GH_TOKEN: ${{ secrets.CR_Password }}
        run: |
           gh attestation verify app.jar --owner dheeman2912 --format=json | jq .r
+
           
     
       # Step 5: Install Syft for SBOM generation
