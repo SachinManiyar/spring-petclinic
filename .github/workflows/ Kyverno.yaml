@@ -536,6 +536,11 @@ jobs:
             echo "Managed Identity verified successfully."
           fi
 
+      - name: Pull Docker Image
+        run: |
+          echo "Pulling image ghcr.io/dheeman2912/spring-petclinic:v1"
+          docker pull ghcr.io/dheeman2912/spring-petclinic:v1
+
       
       - name: Get SHA256 of Docker Image
         id: get_image_sha
