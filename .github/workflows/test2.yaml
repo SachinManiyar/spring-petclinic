@@ -86,11 +86,6 @@ jobs:
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
           echo "::set-output name=image_sha::$IMAGE_SHA"
 
-     # Step 10: Scan Docker Image with Trivy
-     - name: Scan Docker Image with Trivy
-       run: |
-          trivy image ghcr.io/dheeman2912/spring-petclinic:v1
-
      # Step 11: Sign Docker Image
      - name: Sign Docker Image
        run: |
