@@ -9,6 +9,8 @@ echo "Installing Trivy..."
 apt-get install -y wget
 wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb
 dpkg -i trivy_0.19.2_Linux-64bit.deb
+echo "Trivy installed at: $(which trivy)"
+trivy --version  # Verify installation
 
 # Install GitHub CLI and jq
 echo "Installing GitHub CLI and jq..."
