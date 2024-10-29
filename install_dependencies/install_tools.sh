@@ -32,4 +32,21 @@ echo "Installing Cosign..."
 curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
 chmod +x /usr/local/bin/cosign
 
+# Clean up faulty Azure CLI sources
+echo "Cleaning up faulty Azure CLI sources..."
+rm -f /etc/apt/sources.list.d/azure-cli.list
+rm -f /etc/apt/sources.list.d/azure-cli.sources
+
+# Install Azure CLI
+echo "Installing Azure CLI..."
+apt-get update
+apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip
+curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Install kubectl
+echo "Installing kubectl..."
+curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm kubectl  # Clean up after installation
+
 echo "All tools installed successfully."
