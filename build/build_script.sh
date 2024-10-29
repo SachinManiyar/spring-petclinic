@@ -2,12 +2,6 @@
 
 # Step 3: Build with Maven Wrapper
 echo "Building with Maven Wrapper..."
-# pwd
-# which java
-# echo "JAVA_HOME: $JAVA_HOME"
-# java -version
-# ls -la /usr/share/maven
-# mvn -version
 mvn clean package -DskipTests
 mv target/*.jar app.jar
 
@@ -34,8 +28,3 @@ gh attestation verify ./sbom.json --owner dheeman2912 --format=json
 # Step 12: Build Docker Image using Maven
 echo "Building Docker Image..."
 ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
-
-#Scan Docker Image with Trivy
-- name: Scan Docker Image with Trivy
-   run: |
-      trivy image ghcr.io/dheeman2912/spring-petclinic:v1
