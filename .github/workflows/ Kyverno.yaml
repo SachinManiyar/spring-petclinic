@@ -336,12 +336,12 @@ on:
 #       run: |
 #         cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
 #       shell: bash
-
+jobs:
   Deploy_To_Aks:
     runs-on: ubuntu-latest
     container:
       image:  dheeman29/new_image:v3
-    needs: Attest_Verify_Predicate
+    # needs: Attest_Verify_Predicate
     steps:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
