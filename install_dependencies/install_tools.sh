@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Update package list and install essential tools
+echo "Updating package list and installing essential tools..."
+apt-get update && apt-get install -y curl gnupg2 lsb-release
+
+# Install wget
+echo "Installing wget..."
+apt-get install -y wget
+
 # Install Syft
 echo "Installing Syft..."
 curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
