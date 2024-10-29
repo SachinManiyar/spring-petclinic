@@ -66,6 +66,10 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
+          
+     - name: Scan Docker Image with Trivy
+       run: |
+          trivy image ghcr.io/dheeman2912/spring-petclinic:v1
 
      # Step 6: Tag Docker Image
      - name: Tag Docker Image
