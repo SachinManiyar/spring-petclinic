@@ -51,7 +51,7 @@ jobs:
      - name: Install Tools
        run: |
           chmod +x ./install_dependencies/install_tools.sh
-          ./install_dependencies/install_tools.sh
+          source ./install_dependencies/install_tools.sh
     
      # Step 4: Run Build Script
      - name: Run Build Script
@@ -85,10 +85,6 @@ jobs:
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
           echo "::set-output name=image_sha::$IMAGE_SHA"
-
-     # Step 9: Debug IMAGE_SHA
-     - name: Debug IMAGE_SHA
-       run: echo "IMAGE_SHA is ${{ env.IMAGE_SHA }}" 
 
      # Step 10: Scan Docker Image with Trivy
      - name: Scan Docker Image with Trivy
