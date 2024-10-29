@@ -530,7 +530,7 @@ jobs:
           fi
       - name: Install Kyverno on AKS
         run: |
-          kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+          kubectl apply -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
 
           
       - name: Create Test Pod
