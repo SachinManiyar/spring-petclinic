@@ -341,7 +341,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image:  dheeman29/new_image:v3
-    # needs: Attest_Verify_Predicate
+    needs: Attest_Verify_Predicate
     steps:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
