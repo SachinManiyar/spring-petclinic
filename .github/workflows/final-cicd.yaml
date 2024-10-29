@@ -472,18 +472,19 @@ jobs:
       # Step 4: Clean up faulty Azure CLI sources
       - name: Clean up faulty Azure CLI sources
         run: |
-          sudo rm -f /etc/apt/sources.list.d/azure-cli.list
-          sudo rm -f /etc/apt/sources.list.d/azure-cli.sources
+          rm -f /etc/apt/sources.list.d/azure-cli.list
+          rm -f /etc/apt/sources.list.d/azure-cli.sourcess
 
       # Step 5: Install Azure CLI
       - name: Install Azure CLI
         run: |
-          sudo apt-get update
-          sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          apt-get update
+          apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip
+          curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+          
           # Install kubectl
           curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
           rm kubectl  # Clean up after installation
 
       # Step 6: Login to Azure
