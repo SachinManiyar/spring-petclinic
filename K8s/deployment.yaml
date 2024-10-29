@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: ghcr.io/dheeman2912/spring-petclinic:v1
+        image: ghcr.io/dheeman2912/spring-petclinic:v1 
         ports:
         - containerPort: 8080
       imagePullSecrets:
