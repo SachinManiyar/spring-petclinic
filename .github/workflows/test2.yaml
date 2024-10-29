@@ -51,7 +51,7 @@ jobs:
      - name: Install Tools
        run: |
           chmod +x ./install_dependencies/install_tools.sh
-          source ./install_dependencies/install_tools.sh
+          ./install_dependencies/install_tools.sh
     
      # Step 4: Run Build Script
      - name: Run Build Script
