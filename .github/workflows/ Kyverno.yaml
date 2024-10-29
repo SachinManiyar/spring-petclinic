@@ -330,12 +330,19 @@ jobs:
           echo "$OUTPUT" > output.json
           # Print the contents of the JSON file
           cat output.json
+          
      - name: Upload JSON file
        uses: actions/upload-artifact@v3
        with:
           name: git-details
           path: output.json
-          
+    
+     - name: Extract commit ID
+       id: extract_commit_id
+       run: |
+          COMMIT_ID=$(jq -r '.commit_id' output.json)
+          echo "COMMIT_ID=$COMMIT_ID" >> $GITHUB_ENV
+              
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
@@ -528,18 +535,15 @@ jobs:
           else
             echo "Managed Identity verified successfully."
           fi
-      - name: Install Kyverno on AKS
-        run: |
-          kubectl apply -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
-
-          
-      - name: Create Test Pod
-        run: |
-          kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --restart=Never
+      
           
       - name: Apply Kyverno Policy
         run: |
           kubectl apply -f K8s/kyverno-policy-with-key.yaml
+          
+      - name: Create Test Pod
+        run: |
+          kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --restart=Never
           
       - name: Verify Kyverno Policy Enforcement
         run: |
