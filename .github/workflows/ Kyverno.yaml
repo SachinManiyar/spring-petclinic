@@ -541,10 +541,13 @@ jobs:
         run: |
           kubectl apply -f K8s/kyverno-policy-with-key.yaml
           
+      - name: Debug Image SHA
+        run: echo "Image SHA is ${{ steps.get_image_sha.outputs.image_sha }}"
+          
       - name: Create Test Pod
         run: |
-          # kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --restart=Never
-          kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ steps.get_image_sha.outputs.image_sha }} --restart=Never
+          kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --restart=Never
+          # kubectl run pod1 --image ghcr.io/dheeman2912/spring-petclinic@${{ steps.get_image_sha.outputs.image_sha }} --restart=Never
           
       - name: Verify Kyverno Policy Enforcement
         run: |
