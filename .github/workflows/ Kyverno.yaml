@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: dheeman29/new_image:v3
     outputs:
@@ -256,7 +256,7 @@ jobs:
          
 
   Attest_Verify_Predicate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:      
       image:  dheeman29/new_image:v3
 
@@ -345,7 +345,7 @@ jobs:
       shell: bash
 
   Deploy_To_Aks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image:  dheeman29/new_image:v3
     needs: Attest_Verify_Predicate
