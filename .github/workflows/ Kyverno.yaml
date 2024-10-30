@@ -249,6 +249,7 @@ jobs:
        run: |
           COMMIT_ID=$(jq -r '.commit_id' output.json)
           echo "COMMIT_ID=$COMMIT_ID" >> $GITHUB_ENV
+         
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-latest
