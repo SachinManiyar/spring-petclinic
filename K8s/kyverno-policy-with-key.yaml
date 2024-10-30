@@ -1,4 +1,3 @@
-
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -35,7 +34,7 @@ spec:
                     - key: "predicate.commit_id"
                       operator: Equals
                       value: "${COMMIT_ID}"
-                      - key: "predicate.author_email"
+                    - key: "predicate.author_email"
                       operator: Equals
                       value: "dheemandass2912@gmail.com"
                     - key: "predicate.author_name"
@@ -47,6 +46,7 @@ spec:
                     - key: "predicate.uri"
                       operator: Equals
                       value: "https://github.com/DHEEMAN2912/spring-petclinic"  # Replace with the actual URI
+I
 
 
 
