@@ -3,7 +3,7 @@ kind: ClusterPolicy
 metadata:
   name: attest-code-review
 spec:
-  validationFailureAction: Enforce
+  validationFailureAction: Audit
   background: false
   webhookTimeoutSeconds: 30
   failurePolicy: Fail
@@ -20,7 +20,7 @@ spec:
           type: Cosign 
           verifyDigest: true
           attestations:
-            - predicateType: https://example.com/CodeReview/v1
+            - type: https://example.com/CodeReview/v1
               attestors:
                 - entries:
                     - keys:
