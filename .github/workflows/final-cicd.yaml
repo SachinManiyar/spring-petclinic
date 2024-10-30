@@ -549,13 +549,13 @@
 
 
 
-name: DevSecOps Pipelinee
+name: DevSecOps Pipeline
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 jobs:
   build-and-scan:
