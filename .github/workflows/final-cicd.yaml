@@ -1,536 +1,545 @@
-# name: Combined Pipeline
+name: Combined Pipeline
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
-# jobs:
-#   build-and-scan:
-#     runs-on: ubuntu-latest
-#     container:
-#       image: dheeman29/new_image:v3
-#     outputs:
-#       image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    container:
+      image: dheeman29/new_image:v3
+    outputs:
+      image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
-#     permissions:
-#       security-events: write
-#       id-token: write
-#       contents: read
-#       attestations: write
-#       packages: write
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
 
-#     steps:
-#      - uses: actions/checkout@v4
+    steps:
+     - uses: actions/checkout@v4
 
-#       # Step 1: Capture SHA256 ID of the Image
-#      - name: Capture SHA256 ID of the Image
-#        run: |          
-#           REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new_image:v3) 
-#           if [ "$REPO_DIGESTS" == "[]" ]; then
-#               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-#               exit 1
-#           fi
-#           CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new_image:v3 | sed 's/.*@sha256://')
-#           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+      # Step 1: Capture SHA256 ID of the Image
+     - name: Capture SHA256 ID of the Image
+       run: |          
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new_image:v3) 
+          if [ "$REPO_DIGESTS" == "[]" ]; then
+              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+              exit 1
+          fi
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new_image:v3 | sed 's/.*@sha256://')
+          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-#       # Step 2: Verify Container SHA256 ID        
-#      - name: Verify Container SHA256 ID        
-#        run: |          
-#           EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-#           ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+      # Step 2: Verify Container SHA256 ID        
+     - name: Verify Container SHA256 ID        
+       run: |          
+          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-#           if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-#               echo "SHA256 mismatch. Aborting."
-#               exit 1
-#           fi
-#           echo "SHA256 ID verified successfully."
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+              echo "SHA256 mismatch. Aborting."
+              exit 1
+          fi
+          echo "SHA256 ID verified successfully."
 
-#       # Step 3: Build with Maven Wrapper
-#      - name: Build with Maven Wrapper
-#        run: |
-#           pwd
-#           which java 
-#           echo "JAVA_HOME: $JAVA_HOME"
-#           java -version
-#           ls -la /usr/share/maven
-#           mvn -version
-#           mvn clean package -DskipTests
-#           mv target/*.jar app.jar
+      # Step 3: Build with Maven Wrapper
+     - name: Build with Maven Wrapper
+       run: |
+          pwd
+          which java 
+          echo "JAVA_HOME: $JAVA_HOME"
+          java -version
+          ls -la /usr/share/maven
+          mvn -version
+          mvn clean package -DskipTests
+          mv target/*.jar app.jar
 
-#       # Step 4: Generate artifact attestation
-#      - name: Generate artifact attestation
-#        uses: actions/attest-build-provenance@v1
-#        with:
-#           subject-path: ./app.jar
+      # Step 4: Generate artifact attestation
+     - name: Generate artifact attestation
+       uses: actions/attest-build-provenance@v1
+       with:
+          subject-path: ./app.jar
 
-#       # Step 5: Install Syft for SBOM generation
-#      - name: Install Syft
-#        run: |
-#           curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
+      # Step 5: Install Syft for SBOM generation
+     - name: Install Syft
+       run: |
+          curl -sSL https://github.com/anchore/syft/releases/download/v0.66.0/syft_0.66.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin syft
 
-#       # Step 6: Generate SBOM with Syft
-#      - name: Generate SBOM with Syft
-#        run: |
-#           syft dir:. -o cyclonedx-json > sbom.json
+      # Step 6: Generate SBOM with Syft
+     - name: Generate SBOM with Syft
+       run: |
+          syft dir:. -o cyclonedx-json > sbom.json
 
-#       # Step 7: Upload SBOM
-#      - name: Upload SBOM
-#        uses: actions/upload-artifact@v4
-#        with:
-#           name: sbom
-#           path: sbom.json
+      # Step 7: Upload SBOM
+     - name: Upload SBOM
+       uses: actions/upload-artifact@v4
+       with:
+          name: sbom
+          path: sbom.json
 
 
-#       # Step 8: Set up GitHub CLI Repository
-#      - name: Install GitHub CLI and jq
-#        run: |
-#         # Download and install GitHub CLI keyring and source list
-#         curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
-#         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+      # Step 8: Set up GitHub CLI Repository
+     - name: Install GitHub CLI and jq
+       run: |
+        # Download and install GitHub CLI keyring and source list
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
         
-#         # Update and install GitHub CLI and jq
-#         apt-get update
-#         apt-get install -y gh jq
-#        shell: bash
+        # Update and install GitHub CLI and jq
+        apt-get update
+        apt-get install -y gh jq
+       shell: bash
 
-#       # Step 10: Generate SBOM attestation
-#      - name: Generate SBOM attestation
-#        uses: actions/attest-sbom@v1
-#        with:
-#           subject-path: ./sbom.json
-#           sbom-path: ./sbom.json
+      # Step 10: Generate SBOM attestation
+     - name: Generate SBOM attestation
+       uses: actions/attest-sbom@v1
+       with:
+          subject-path: ./sbom.json
+          sbom-path: ./sbom.json
 
-#       # Step 11: Verify SBOM attestation
-#      - name: Verify SBOM attestation
-#        env:
-#           GH_TOKEN: ${{ secrets.CR_Password }}
-#        run: |
-#           gh attestation verify ./sbom.json --owner dheeman2912 --format=json | jq .
+      # Step 11: Verify SBOM attestation
+     - name: Verify SBOM attestation
+       env:
+          GH_TOKEN: ${{ secrets.CR_Password }}
+       run: |
+          gh attestation verify ./sbom.json --owner dheeman2912 --format=json | jq .
 
-#       # Step 12: Build Docker Image using Maven
-#      - name: Build Docker Image
-#        run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
+      # Step 12: Build Docker Image using Maven
+     - name: Build Docker Image
+       run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
 
-#      - name: Log in to GitHub Container Registry
-#        uses: docker/login-action@v2
-#        with:
-#           username: ${{ secrets.CR_Username }}
-#           #username: ${{ github.actor }}
-#           password: ${{ secrets.CR_Password }}
-#           #password: ${{secrets.GH_TOKEN}}
-#           registry: ghcr.io
+     - name: Log in to GitHub Container Registry
+       uses: docker/login-action@v2
+       with:
+          username: ${{ secrets.CR_Username }}
+          #username: ${{ github.actor }}
+          password: ${{ secrets.CR_Password }}
+          #password: ${{secrets.GH_TOKEN}}
+          registry: ghcr.io
 
-#       # Step 14: Tag Docker Image
-#      - name: Tag Docker Image
-#        run: |
-#          docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/dheeman2912/spring-petclinic:v1
+      # Step 14: Tag Docker Image
+     - name: Tag Docker Image
+       run: |
+         docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/dheeman2912/spring-petclinic:v1
 
-#       # Step 15: Push Docker Image
-#      - name: Push Docker Image
-#        run: |
-#           docker push  ghcr.io/dheeman2912/spring-petclinic:v1
-#           docker inspect  ghcr.io/dheeman2912/spring-petclinic:v1
-#      # Step 16: Get SHA256 of the Pushed Docker Image
-#      - name: Get SHA256 of Docker Image
-#        id: get_image_sha
-#        run: |
-#           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
-#           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
-#           echo "::set-output name=image_sha::$IMAGE_SHA"
-#        shell: bash
+      # Step 15: Push Docker Image
+     - name: Push Docker Image
+       run: |
+          docker push  ghcr.io/dheeman2912/spring-petclinic:v1
+          docker inspect  ghcr.io/dheeman2912/spring-petclinic:v1
+     # Step 16: Get SHA256 of the Pushed Docker Image
+     - name: Get SHA256 of Docker Image
+       id: get_image_sha
+       run: |
+          IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
+          echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "::set-output name=image_sha::$IMAGE_SHA"
+       shell: bash
 
-#      - name: Debug IMAGE_SHA
-#        run: echo "IMAGE_SHA is ${{ env.IMAGE_SHA }}"  # Access the variable correctly
-#        shell: bash
+     - name: Debug IMAGE_SHA
+       run: echo "IMAGE_SHA is ${{ env.IMAGE_SHA }}"  # Access the variable correctly
+       shell: bash
        
      
 
 
-#      - name: Install Trivy for Vulnerability Scanning
-#        run: |
-#           # Install wget and download Trivy package
-#           apt-get install -y wget
-#           wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb
-#           # Install Trivy
-#           dpkg -i trivy_0.19.2_Linux-64bit.deb
-#        shell: bash
+     - name: Install Trivy for Vulnerability Scanning
+       run: |
+          # Install wget and download Trivy package
+          apt-get install -y wget
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb
+          # Install Trivy
+          dpkg -i trivy_0.19.2_Linux-64bit.deb
+       shell: bash
 
-#      - name: Scan Docker Image with Trivy
-#        run: |
-#         trivy image ghcr.io/dheeman2912/spring-petclinic:v1
-#        shell: bash
+     - name: Scan Docker Image with Trivy
+       run: |
+        trivy image ghcr.io/dheeman2912/spring-petclinic:v1
+       shell: bash
 
     
-#       # Step 18: Install Cosign CLI
-#      - name: Install Cosign CLI
-#        run: |
-#           curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
-#           chmod +x /usr/local/bin/cosign
-#           cosign version
+      # Step 18: Install Cosign CLI
+     - name: Install Cosign CLI
+       run: |
+          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
+          chmod +x /usr/local/bin/cosign
+          cosign version
     
-#       # Step 19: Sign Docker Image
-#      - name: Sign Docker Image
-#        run: |
-#           echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key  # Ensure Windows line endings are handled
-#           chmod 600 cosign.key  # Set permissions to read/write only for the owner
-#           cosign sign --key cosign.key ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} --yes
-#        shell: bash
-#        env:
-#           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-#           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+      # Step 19: Sign Docker Image
+     - name: Sign Docker Image
+       run: |
+          echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key  # Ensure Windows line endings are handled
+          chmod 600 cosign.key  # Set permissions to read/write only for the owner
+          cosign sign --key cosign.key ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} --yes
+       shell: bash
+       env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-#      - name: Public Key Creation
-#        run: |
-#           cosign public-key --key env://COSIGN_KEY > cosign.pub
-#        shell: bash
-#        env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     - name: Public Key Creation
+       run: |
+          cosign public-key --key env://COSIGN_KEY > cosign.pub
+       shell: bash
+       env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
         
-#      - name: Verify Docker Image Signature
-#        run: |
-#           cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} | jq . #--insecure-ignore-tlog #--check-claims=false
+     - name: Verify Docker Image Signature
+       run: |
+          cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} | jq . #--insecure-ignore-tlog #--check-claims=false
 
-#      - name: Attach SBOM
-#        run: |
-#           set -e  # Exit on error
-#           # Run the cosign attach sbom command and capture its output
-#           output=$(cosign attach sbom --sbom sbom.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
-#           echo "cat output --> showing output below"
-#           echo "output: $output"
-#           # Extract the SHA from the output
-#           sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Failed to extract SBOM filename"; exit 1; }
-#           echo "sbom_filename: $sbom_filename"
-#           # Check if the extraction was successful
-#           if [ -z "$sbom_filename" ]; then
-#             echo "Error: No SBOM filename found in the output"
-#             exit 1
-#           fi
-#           # Set the extracted SHA as an environment variable
-#           echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+     - name: Attach SBOM
+       run: |
+          set -e  # Exit on error
+          # Run the cosign attach sbom command and capture its output
+          output=$(cosign attach sbom --sbom sbom.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  2>&1) || { echo "Failed to run cosign attach sbom"; exit 1; }
+          echo "cat output --> showing output below"
+          echo "output: $output"
+          # Extract the SHA from the output
+          sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Failed to extract SBOM filename"; exit 1; }
+          echo "sbom_filename: $sbom_filename"
+          # Check if the extraction was successful
+          if [ -z "$sbom_filename" ]; then
+            echo "Error: No SBOM filename found in the output"
+            exit 1
+          fi
+          # Set the extracted SHA as an environment variable
+          echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
 
-#      - name: Sign the SBOM attached with the Image
-#        run: |
-#           set -e  # Exit on error
-#           # Use the environment variable to construct the command
-#           if [ -z "$SBOM_FILENAME" ]; then
-#             echo "Error: SBOM_FILENAME environment variable is not set"
-#             exit 1
-#           fi
-#           echo "Signing SBOM with filename: $SBOM_FILENAME"
-#           cosign sign --key env://COSIGN_KEY   ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME --yes || { echo "Failed to sign with SBOM"; exit 1; }
-#        shell: bash
-#        env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     - name: Sign the SBOM attached with the Image
+       run: |
+          set -e  # Exit on error
+          # Use the environment variable to construct the command
+          if [ -z "$SBOM_FILENAME" ]; then
+            echo "Error: SBOM_FILENAME environment variable is not set"
+            exit 1
+          fi
+          echo "Signing SBOM with filename: $SBOM_FILENAME"
+          cosign sign --key env://COSIGN_KEY   ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME --yes || { echo "Failed to sign with SBOM"; exit 1; }
+       shell: bash
+       env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-#      - name: Verify Sign of SBOM attached with the Image
-#        run: |
-#           set -e  # Exit on error
-#           cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME | jq . || { echo "Failed to verify SBOM Sign"; exit 1; }
+     - name: Verify Sign of SBOM attached with the Image
+       run: |
+          set -e  # Exit on error
+          cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic:$SBOM_FILENAME | jq . || { echo "Failed to verify SBOM Sign"; exit 1; }
 
-#      - name: Directly attest SBOM with the Image
-#        run: |
-#           set -e  # Exit on error
-#           output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
-#           echo "output: $output"
-#        shell: bash
-#        env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     - name: Directly attest SBOM with the Image
+       run: |
+          set -e  # Exit on error
+          output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest sbom with the image"; exit 1; }
+          echo "output: $output"
+       shell: bash
+       env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-#      - name: Verfiy the attested Image
-#        run: |
-#           set -e  # Exit on error
-#           output1=$(cosign verify-attestation --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
-#           echo "output: $output1"
+     - name: Verfiy the attested Image
+       run: |
+          set -e  # Exit on error
+          output1=$(cosign verify-attestation --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  | jq . 2>&1) || { echo "Failed to verify the attested image"; exit 1; }
+          echo "output: $output1"
 
-#      - name: Sign SBOM
-#        run: |
-#           cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1
-#        shell: bash
-#        env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     - name: Sign SBOM
+       run: |
+          cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1
+       shell: bash
+       env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
           
-#      # - name: Authenticate GitHub Container Registry
-#      #   env:
-#      #    CR_PAT: ${{ secrets.CR_Password }}
-#      #   run: |
-#      #    echo $CR_PAT | cosign login ghcr.io -u ${{ github.actor }} --password-stdin
+     # - name: Authenticate GitHub Container Registry
+     #   env:
+     #    CR_PAT: ${{ secrets.CR_Password }}
+     #   run: |
+     #    echo $CR_PAT | cosign login ghcr.io -u ${{ github.actor }} --password-stdin
     
-#      # - name: Upload Signed SBOM to GitHub
-#      #   env:
-#      #    IMAGE_SHA: ${{ env.IMAGE_SHA }}
-#      #   run: |
-#      #    # Ensure cosign.experimental mode
-#      #    COSIGN_EXPERIMENTAL=1
-#      #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+     # - name: Upload Signed SBOM to GitHub
+     #   env:
+     #    IMAGE_SHA: ${{ env.IMAGE_SHA }}
+     #   run: |
+     #    # Ensure cosign.experimental mode
+     #    COSIGN_EXPERIMENTAL=1
+     #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@$IMAGE_SHA 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
         
-#      #    # Print output and extract SBOM filename
-#      #    echo "output: $output2"
-#      #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-#      #    echo "sbom_file: $sbom_file"
-#      #   shell: bash
+     #    # Print output and extract SBOM filename
+     #    echo "output: $output2"
+     #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
+     #    echo "sbom_file: $sbom_file"
+     #   shell: bash
 
 
-#      # - name: upload Signed SBOM to GitHub
-#      #   run: |
-#      #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
-#      #    echo "output: $output2"
-#      #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-#      #    echo "sbom_file: $sbom_file"
+     # - name: upload Signed SBOM to GitHub
+     #   run: |
+     #    output2=$(cosign upload blob -f cosign.bundle ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1) || { echo "Failed to upload the blob to the Registry"; exit 1; }
+     #    echo "output: $output2"
+     #    sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
+     #    echo "sbom_file: $sbom_file"
 
 
-#      # - name: Verify SBOM Uploaded to Image Repo
-#      #   run: |
-#      #      cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub 2>&1
-#      #   shell: bash
-#      #   env:
-#      #      COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#      #      COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+     # - name: Verify SBOM Uploaded to Image Repo
+     #   run: |
+     #      cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub 2>&1
+     #   shell: bash
+     #   env:
+     #      COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+     #      COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-#      - name: Set Git safe directory
-#        run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
+     - name: Set Git safe directory
+       run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
 
-#      - name: Fetch commit details
-#        run: |
-#           # Get the commit ID
-#           COMMIT_ID=$(git rev-parse HEAD)
-#           # Get the branch name
-#           BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-#           # Get the author name and email
-#           AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
-#           AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
-#           # Get the pull request number from GitHub context if it's a PR
-#           if [ -n "${{ github.event.pull_request.number }}" ]; then
-#             PR_NUMBER="${{ github.event.pull_request.number }}"
-#           else
-#             PR_NUMBER="Not applicable"
-#           fi
-#           # Get the GitHub repository URL
-#           REPO_URL="https://github.com/${{ github.repository }}"
-#           # Create JSON output
-#           OUTPUT=$(jq -n \
-#             --arg commit_id "$COMMIT_ID" \
-#             --arg author_name "$AUTHOR_NAME" \
-#             --arg author_email "$AUTHOR_EMAIL" \
-#             --arg branch "$BRANCH_NAME" \
-#             --arg uri "$REPO_URL" \
-#             '{
-#               commit_id: $commit_id,
-#               author_name: $author_name,
-#               author_email: $author_email,
-#               branch: $branch,
-#               uri: $uri
-#             }')
-#           # Save JSON output to a file
-#           echo "$OUTPUT" > output.json
-#           # Print the contents of the JSON file
-#           cat output.json
-#      - name: Upload JSON file
-#        uses: actions/upload-artifact@v3
-#        with:
-#           name: git-details
-#           path: output.json
+     - name: Fetch commit details
+       run: |
+          # Get the commit ID
+          COMMIT_ID=$(git rev-parse HEAD)
+          # Get the branch name
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          # Get the author name and email
+          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
+          # Get the pull request number from GitHub context if it's a PR
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+          else
+            PR_NUMBER="Not applicable"
+          fi
+          # Get the GitHub repository URL
+          REPO_URL="https://github.com/${{ github.repository }}"
+          # Create JSON output
+          OUTPUT=$(jq -n \
+            --arg commit_id "$COMMIT_ID" \
+            --arg author_name "$AUTHOR_NAME" \
+            --arg author_email "$AUTHOR_EMAIL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg uri "$REPO_URL" \
+            '{
+              commit_id: $commit_id,
+              author_name: $author_name,
+              author_email: $author_email,
+              branch: $branch,
+              uri: $uri
+            }')
+          # Save JSON output to a file
+          echo "$OUTPUT" > output.json
+          # Print the contents of the JSON file
+          cat output.json
+     - name: Upload JSON file
+       uses: actions/upload-artifact@v3
+       with:
+          name: git-details
+          path: output.json
           
 
-#   Attest_Verify_Predicate:
-#     runs-on: ubuntu-latest
-#     container:      
-#       image:  dheeman29/new_image:v3
+  Attest_Verify_Predicate:
+    runs-on: ubuntu-latest
+    container:      
+      image:  dheeman29/new_image:v3
 
-#     permissions:
-#       security-events: write
-#       id-token: write
-#       contents: read
-#       attestations: write
-#       packages: write
-#     needs: build-and-scan
-#     steps:
-#       # Step 1: Capture SHA256 ID of the Image
-#       - name: Capture SHA256 ID of the Image
-#         run: |          
-#           REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'  dheeman29/new_image:v3) 
-#           if [ "$REPO_DIGESTS" == "[]" ]; then
-#               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-#               exit 1
-#           fi
-#           CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'  dheeman29/new_image:v3 | sed 's/.*@sha256://')
-#           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+    needs: build-and-scan
+    steps:
+      # Step 1: Capture SHA256 ID of the Image
+      - name: Capture SHA256 ID of the Image
+        run: |          
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'  dheeman29/new_image:v3) 
+          if [ "$REPO_DIGESTS" == "[]" ]; then
+              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+              exit 1
+          fi
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'  dheeman29/new_image:v3 | sed 's/.*@sha256://')
+          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-#       # Step 2: Verify Container SHA256 ID        
-#       - name: Verify Container SHA256 ID        
-#         run: |          
-#           EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-#           ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+      # Step 2: Verify Container SHA256 ID        
+      - name: Verify Container SHA256 ID        
+        run: |          
+          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-#           if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-#               echo "SHA256 mismatch. Aborting."
-#               exit 1
-#           fi
-#           echo "SHA256 ID verified successfully."
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+              echo "SHA256 mismatch. Aborting."
+              exit 1
+          fi
+          echo "SHA256 ID verified successfully."
 
      
-#       - name: Check Out Source Code
-#         uses: actions/checkout@v3
-#       - name: Download output.json file artifact
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: git-details
+      - name: Check Out Source Code
+        uses: actions/checkout@v3
+      - name: Download output.json file artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: git-details
 
-#       - name: Log in to GitHub Container Registry
-#         uses: docker/login-action@v2
-#         with:
-#           username: ${{ secrets.CR_Username }}
-#           #username: ${{github.actor}}
-#           password: ${{ secrets.CR_Password }}
-#           #password: ${{secrets.GH_TOKEN}}
-#           registry: ghcr.io
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.CR_Username }}
+          #username: ${{github.actor}}
+          password: ${{ secrets.CR_Password }}
+          #password: ${{secrets.GH_TOKEN}}
+          registry: ghcr.io
 
-#       - name: Install GitHub CLI and jq
-#         run: |
-#           # Download and install GitHub CLI keyring and source list
-#           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
-#           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+      - name: Install GitHub CLI and jq
+        run: |
+          # Download and install GitHub CLI keyring and source list
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
           
-#           # Update and install GitHub CLI and jq
-#           apt-get update
-#           apt-get install -y gh jq
-#         shell: bash
+          # Update and install GitHub CLI and jq
+          apt-get update
+          apt-get install -y gh jq
+        shell: bash
 
 
     
 
-#       - name: Install Cosign CLI
-#         run: |
-#           curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
-#           chmod +x /usr/local/bin/cosign
-#           cosign version
+      - name: Install Cosign CLI
+        run: |
+          curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
+          chmod +x /usr/local/bin/cosign
+          cosign version
 
 
-#       - name: Public Key Creation
-#         run: |
-#           cosign public-key --key env://COSIGN_KEY > cosign.pub
-#         shell: bash
-#         env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+      - name: Public Key Creation
+        run: |
+          cosign public-key --key env://COSIGN_KEY > cosign.pub
+        shell: bash
+        env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-#       - name: Attestation using Predicate
-#         run: |
-#           cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }}  --yes
-#           # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
-#           # $(cat output.json | cosign attest --predicate - ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
-#         shell: bash
-#         env:
-#           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-#           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+      - name: Attestation using Predicate
+        run: |
+          cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }}  --yes
+          # $(cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
+          # $(cat output.json | cosign attest --predicate - ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  --yes 2>&1) || { echo "Failed to attest predicate with the image"; exit 1; }
+        shell: bash
+        env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
 
-#       - name: Verify Predicate Attestation
-#         run: |
-#           cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  | jq -r .payload | base64 --decode | jq .
+      - name: Verify Predicate Attestation
+        run: |
+          cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }}  | jq -r .payload | base64 --decode | jq .
           
 
-#   Deploy_To_Aks:
-#     runs-on: ubuntu-latest
-#     container:
-#       image:  dheeman29/new_image:v3
-#     needs: Attest_Verify_Predicate
-#     steps:
-#       # Step 1: Capture SHA256 ID of the Image
-#       - name: Capture SHA256 ID of the Image
-#         run: |          
-#           REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'  dheeman29/new_image:v3) 
-#           if [ "$REPO_DIGESTS" == "[]" ]; then
-#             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-#             exit 1
-#           fi
-#           CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'  dheeman29/new_image:v3| sed 's/.*@sha256://')
-#           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+  Deploy_To_Aks:
+    runs-on: ubuntu-latest
+    container:
+      image:  dheeman29/new_image:v3
+    needs: Attest_Verify_Predicate
+    steps:
+      # Step 1: Capture SHA256 ID of the Image
+      - name: Capture SHA256 ID of the Image
+        run: |          
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'  dheeman29/new_image:v3) 
+          if [ "$REPO_DIGESTS" == "[]" ]; then
+            echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+            exit 1
+          fi
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'  dheeman29/new_image:v3| sed 's/.*@sha256://')
+          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-#       # Step 2: Verify Container SHA256 ID        
-#       - name: Verify Container SHA256 ID        
-#         run: |          
-#           EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-#           ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+      # Step 2: Verify Container SHA256 ID        
+      - name: Verify Container SHA256 ID        
+        run: |          
+          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-#           if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-#             echo "SHA256 mismatch. Aborting."
-#             exit 1
-#           fi
-#           echo "SHA256 ID verified successfully."
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+            echo "SHA256 mismatch. Aborting."
+            exit 1
+          fi
+          echo "SHA256 ID verified successfully."
 
-#       # Step 3: Checkout the code
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-#         with:
-#           fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+      # Step 3: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
 
-#       # Step 4: Clean up faulty Azure CLI sources
-#       - name: Clean up faulty Azure CLI sources
-#         run: |
-#           rm -f /etc/apt/sources.list.d/azure-cli.list
-#           rm -f /etc/apt/sources.list.d/azure-cli.sourcess
+      # Step 4: Clean up faulty Azure CLI sources
+      - name: Clean up faulty Azure CLI sources
+        run: |
+          rm -f /etc/apt/sources.list.d/azure-cli.list
+          rm -f /etc/apt/sources.list.d/azure-cli.sourcess
 
-#       # Step 5: Install Azure CLI
-#       - name: Install Azure CLI
-#         run: |
-#           apt-get update
-#           apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip
-#           curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      # Step 5: Install Azure CLI
+      - name: Install Azure CLI
+        run: |
+          apt-get update
+          apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip
+          curl -sL https://aka.ms/InstallAzureCLIDeb | bash
           
-#           # Install kubectl
-#           curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-#           install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-#           rm kubectl  # Clean up after installation
+          # Install kubectl
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+          install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          rm kubectl  # Clean up after installation
 
-#       # Step 6: Login to Azure
-#       - name: Login to Azure
-#         uses: azure/login@v1
-#         with:
-#           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # Step 6: Login to Azure
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-#       # Step 7: Run Azure CLI commands to get credentials
-#       - name: Get AKS credentials
-#         run: |
-#           az account show
-#           az aks get-credentials --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }}
+      # Step 7: Run Azure CLI commands to get credentials
+      - name: Get AKS credentials
+        run: |
+          az account show
+          az aks get-credentials --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }}
 
-#       # Step 8: Set up kubelogin for non-interactive login
-#       - name: Set up kubelogin
-#         uses: azure/use-kubelogin@v1
-#         with:
-#           kubelogin-version: 'v0.0.25'
+      # Step 8: Set up kubelogin for non-interactive login
+      - name: Set up kubelogin
+        uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: 'v0.0.25'
 
-#       # Step 9: Retrieve Kubernetes context
-#       - name: Get K8s context
-#         uses: azure/aks-set-context@v3
-#         with:
-#           resource-group: ${{ secrets.RESOURCE_GROUP }}
-#           cluster-name: ${{ secrets.CLUSTER_NAME }}
-#           admin: 'false'
-#           use-kubelogin: 'true'
+      # Step 9: Retrieve Kubernetes context
+      - name: Get K8s context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.CLUSTER_NAME }}
+          admin: 'false'
+          use-kubelogin: 'true'
           
-#       # Step 10: Verify the AKS Cluster via Managed Identity of the cluster
-#       - name: Verify the AKS Cluster via Managed Identity
-#         run: |
-#           CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv)
-#           echo "CLUSTER_MANAGED_ID=$CLUSTER_MANAGED_ID" >> $GITHUB_ENV
+      # Step 10: Verify the AKS Cluster via Managed Identity of the cluster
+      - name: Verify the AKS Cluster via Managed Identity
+        run: |
+          CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv)
+          echo "CLUSTER_MANAGED_ID=$CLUSTER_MANAGED_ID" >> $GITHUB_ENV
 
-#           EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
+          EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
           
-#           if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
-#             echo "Error: Managed Identity does not match. Aborting deployment."
-#             exit 1
-#           else
-#             echo "Managed Identity verified successfully."
-#           fi
+          if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
+            echo "Error: Managed Identity does not match. Aborting deployment."
+            exit 1
+          else
+            echo "Managed Identity verified successfully."
+          fi
 
-#       # Step 11: Deploy to AKS
-#       - name: Deploy to AKS
-#         run: |
-#           kubectl apply -f K8s/deployment.yaml
-#           kubectl apply -f K8s/service.yaml
+      - name: Apply Kyverno Policy
+        run: |
+         if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
+          echo "Kyverno policy applied successfully."
+         else
+          echo "Error applying Kyverno policy."
+          exit 1
+         fi
+
+      # Step 11: Deploy to AKS
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f K8s/deployment.yaml
+          kubectl apply -f K8s/service.yaml
