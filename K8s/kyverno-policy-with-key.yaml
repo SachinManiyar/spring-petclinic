@@ -17,7 +17,7 @@ spec:
       verifyImages:
         - imageReferences:
             - "*"
-          type: Cosign 
+          type: Cosign
           verifyDigest: true
           attestations:
             - type: https://example.com/CodeReview/v1
@@ -46,7 +46,10 @@ spec:
                     - key: "predicate.uri"
                       operator: Equals
                       value: "https://github.com/DHEEMAN2912/spring-petclinic"  # Replace with the actual URI
-I
+          imageRegistryCredentials:
+            - name: ghcr-registry-secret
+              namespace: kyverno
+
 
 
 
