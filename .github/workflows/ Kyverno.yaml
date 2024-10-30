@@ -1,4 +1,3 @@
-
 name: DevSecOps Pipelinee
 
 on:
@@ -9,7 +8,7 @@ on:
 
 jobs:
   build-and-scan:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu:latest
     container:
       image: dheeman29/new_image:v3
     outputs:
@@ -256,7 +255,7 @@ jobs:
          
 
   Attest_Verify_Predicate:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu:latest
     container:      
       image:  dheeman29/new_image:v3
 
@@ -345,7 +344,7 @@ jobs:
       shell: bash
 
   Deploy_To_Aks:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu:latest
     container:
       image:  dheeman29/new_image:v3
     needs: Attest_Verify_Predicate
