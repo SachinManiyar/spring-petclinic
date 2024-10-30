@@ -31,18 +31,6 @@ spec:
                     -----END PUBLIC KEY-----
             conditions:
               - all:   
-                - key: "{{ .attestations[0].predicate.commit_id }}"
-                  operator: Equals
-                  value: "{{ .attestations[0].predicate.commit_id }}"  # This assumes the attestation will have this field.
-                - key: "{{ .attestations[0].predicate.author_name }}"
-                  operator: Equals
-                  value: "DHEEMAN2912"
-                - key: "{{ .attestations[0].predicate.author_email }}"
-                  operator: Equals
-                  value: "dheemandass2912@gmail.com"
-                - key: "{{ .attestations[0].predicate.branch }}"
-                  operator: Equals
-                  value: "test"
-                - key: "{{ .attestations[0].predicate.uri }}"
-                  operator: Equals
-                  value: "https://github.com/DHEEMAN2912/spring-petclinic"
+               - key: "{{ commit_id }}"
+                 operator: Equals
+                 value: "${COMMIT_ID}"     
