@@ -1,48 +1,9 @@
-# apiVersion: kyverno.io/v1
-# kind: ClusterPolicy
-# metadata:
-#   name: attest-code-review
-# spec:
-#   validationFailureAction: Audit
-#   background: false
-#   webhookTimeoutSeconds: 30
-#   failurePolicy: Fail
-#   rules:
-#     - name: attest
-#       match:
-#         any:
-#           - resources:
-#               kinds:
-#                 - Pod
-#       verifyImages:
-#         - imageReferences:
-#             - "*"
-#           type: Cosign 
-#           verifyDigest: true
-#           attestations:
-#             - type: https://example.com/CodeReview/v1
-#               attestors:
-#                 - entries:
-#                     - keys:
-#                         publicKeys: |-
-#                           -----BEGIN PUBLIC KEY-----
-#                           MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
-#                           Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
-#                           -----END PUBLIC KEY-----
-#               conditions:
-#                 - all:
-#                     - key: "predicate.commit_id"
-#                       operator: Equals
-#                       value: "${COMMIT_ID}"
-
-
-
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: attest-code-review
 spec:
-  validationFailureAction: Audit  # Changed from Enforce to Audit
+  validationFailureAction: Enforce
   background: false
   webhookTimeoutSeconds: 30
   failurePolicy: Fail
@@ -58,7 +19,6 @@ spec:
             - "*"
           type: Cosign 
           verifyDigest: true
-          mutateDigest: false  # Added this line and set it to false
           attestations:
             - type: https://example.com/CodeReview/v1
               attestors:
@@ -74,4 +34,44 @@ spec:
                     - key: "predicate.commit_id"
                       operator: Equals
                       value: "${COMMIT_ID}"
+
+
+
+# apiVersion: kyverno.io/v1
+# kind: ClusterPolicy
+# metadata:
+#   name: attest-code-review
+# spec:
+#   validationFailureAction: Audit  # Changed from Enforce to Audit
+#   background: false
+#   webhookTimeoutSeconds: 30
+#   failurePolicy: Fail
+#   rules:
+#     - name: attest
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       verifyImages:
+#         - imageReferences:
+#             - "*"
+#           type: Cosign 
+#           verifyDigest: true
+#           mutateDigest: false  # Added this line and set it to false
+#           attestations:
+#             - type: https://example.com/CodeReview/v1
+#               attestors:
+#                 - entries:
+#                     - keys:
+#                         publicKeys: |-
+#                           -----BEGIN PUBLIC KEY-----
+#                           MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
+#                           Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
+#                           -----END PUBLIC KEY-----
+#               conditions:
+#                 - all:
+#                     - key: "predicate.commit_id"
+#                       operator: Equals
+#                       value: "${COMMIT_ID}"
 
