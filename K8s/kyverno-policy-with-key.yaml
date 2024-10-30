@@ -16,7 +16,7 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - "*"
+            - "ghcr.io/dheeman2912/*" 
           type: Cosign
           verifyDigest: true
           attestations:
