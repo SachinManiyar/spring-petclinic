@@ -1,39 +1,39 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
-metadata:
-  name: attest-code-review
-spec:
-  validationFailureAction: Enforce
-  background: false
-  webhookTimeoutSeconds: 30
-  failurePolicy: Fail
-  rules:
-    - name: attest
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      verifyImages:
-        - imageReferences:
-            - "*"
-          type: Cosign 
-          verifyDigest: true
-          attestations:
-            - type: https://example.com/CodeReview/v1
-              attestors:
-                - entries:
-                    - keys:
-                        publicKeys: |-
-                          -----BEGIN PUBLIC KEY-----
-                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
-                          Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
-                          -----END PUBLIC KEY-----
-              conditions:
-                - all:
-                    - key: "predicate.commit_id"
-                      operator: Equals
-                      value: "${COMMIT_ID}"
+# apiVersion: kyverno.io/v1
+# kind: ClusterPolicy
+# metadata:
+#   name: attest-code-review
+# spec:
+#   validationFailureAction: Enforce
+#   background: false
+#   webhookTimeoutSeconds: 30
+#   failurePolicy: Fail
+#   rules:
+#     - name: attest
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       verifyImages:
+#         - imageReferences:
+#             - "*"
+#           type: Cosign 
+#           verifyDigest: true
+#           attestations:
+#             - type: https://example.com/CodeReview/v1
+#               attestors:
+#                 - entries:
+#                     - keys:
+#                         publicKeys: |-
+#                           -----BEGIN PUBLIC KEY-----
+#                           MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
+#                           Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
+#                           -----END PUBLIC KEY-----
+#               conditions:
+#                 - all:
+#                     - key: "predicate.commit_id"
+#                       operator: Equals
+#                       value: "${COMMIT_ID}"
 
 
 
@@ -74,4 +74,42 @@ spec:
 #                     - key: "predicate.commit_id"
 #                       operator: Equals
 #                       value: "${COMMIT_ID}"
+
+
+
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-predicate-attestation
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: enforce-predicate-attestation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/dheeman2912/spring-petclinic@sha256:*"
+          attestations:
+            - attestors:
+                - entries:
+                    - keys:
+                        publicKeys: |
+                          -----BEGIN PUBLIC KEY-----
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
+                          Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
+                          -----END PUBLIC KEY-----
+                      signatureAlgorithm: sha256
+              conditions:
+                - key: "predicate.type"
+                  operator: Equals
+                  value: "https://example.com/CodeReview/v1"
+              type: https://example.com/CodeReview/v1
+          required: true
+          mutateDigest: true
+
 
