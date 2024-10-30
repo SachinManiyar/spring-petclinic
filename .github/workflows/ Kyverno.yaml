@@ -329,8 +329,8 @@ jobs:
     # Step 8: Attestation using Predicate
     - name: Attest Image using Predicate
       run: |
-        cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
-        # cosign attest --key env://COSIGN_KEY --predicate output.json --type https://example.com/CodeReview/v1 ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
+        # cosign attest --key env://COSIGN_KEY --predicate output.json ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
+        cosign attest --key env://COSIGN_KEY --predicate output.json --type https://example.com/CodeReview/v1 ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
       shell: bash
       env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
@@ -339,8 +339,8 @@ jobs:
     # Step 9: Verify Predicate Attestation
     - name: Verify Predicate Attestation
       run: |
-        cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
-        # cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+        # cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+        cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ needs.build-and-scan.outputs.image_sha }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
       shell: bash
 
   Deploy_To_Aks:
