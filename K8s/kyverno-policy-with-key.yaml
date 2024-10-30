@@ -46,10 +46,7 @@ spec:
                     - key: "predicate.uri"
                       operator: Equals
                       value: "https://github.com/DHEEMAN2912/spring-petclinic"  # Replace with the actual URI
-          imageRegistryCredentials:
-            - name: ghcr-registry-secret
-              namespace: kyverno
-
+       
 
 
 
