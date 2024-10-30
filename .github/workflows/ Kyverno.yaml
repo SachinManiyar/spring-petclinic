@@ -1,5 +1,5 @@
 
-name: DevSecOps Pipeline
+name: DevSecOps Pipelinee
 
 on:
   push:
