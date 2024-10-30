@@ -31,18 +31,18 @@ spec:
                     -----END PUBLIC KEY-----
             conditions:
               - all:   
-                - key: "{{ Data.commit_id }}"
+                - key: "{{ .attestations[0].predicate.commit_id }}"
                   operator: Equals
-                  value: "{{ .attestations[0].predicate.commit_id }}"  # Use the dynamically fetched commit ID
-                - key: "{{ Data.author_name }}"
+                  value: "{{ .attestations[0].predicate.commit_id }}"  # This assumes the attestation will have this field.
+                - key: "{{ .attestations[0].predicate.author_name }}"
                   operator: Equals
                   value: "DHEEMAN2912"
-                - key: "{{ Data.author_email }}"
+                - key: "{{ .attestations[0].predicate.author_email }}"
                   operator: Equals
                   value: "dheemandass2912@gmail.com"
-                - key: "{{ Data.branch }}"
+                - key: "{{ .attestations[0].predicate.branch }}"
                   operator: Equals
                   value: "test"
-                - key: "{{ Data.uri }}"
+                - key: "{{ .attestations[0].predicate.uri }}"
                   operator: Equals
                   value: "https://github.com/DHEEMAN2912/spring-petclinic"
