@@ -425,15 +425,15 @@ jobs:
           echo "Managed Identity verified successfully."
          fi
 
-    # Step 9: Apply Kyverno Policy
-      - name: Apply Kyverno Policy
-        run: |
-         if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
-          echo "Kyverno policy applied successfully."
-         else
-          echo "Error applying Kyverno policy."
-          exit 1
-         fi
+    # # Step 9: Apply Kyverno Policy
+    #   - name: Apply Kyverno Policy
+    #     run: |
+    #      if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
+    #       echo "Kyverno policy applied successfully."
+    #      else
+    #       echo "Error applying Kyverno policy."
+    #       exit 1
+    #      fi
 
     # Step 10: Deploy to AKS
       - name: Deploy to AKS
