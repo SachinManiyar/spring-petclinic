@@ -33,7 +33,7 @@ spec:
               - all:   
                 - key: "{{ Data.commit_id }}"
                   operator: Equals
-                  value: "{{ .GITHUB_ENV.COMMIT_ID }}"  # Use the dynamically fetched commit ID
+                  value: "{{ .attestations[0].predicate.commit_id }}"  # Use the dynamically fetched commit ID
                 - key: "{{ Data.author_name }}"
                   operator: Equals
                   value: "DHEEMAN2912"
