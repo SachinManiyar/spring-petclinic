@@ -551,11 +551,11 @@
 
 name: DevSecOps Pipelinee
 
-on:
-  push:
-    branches:
-      - test
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - test
+#   workflow_dispatch:
 
 jobs:
   build-and-scan:
