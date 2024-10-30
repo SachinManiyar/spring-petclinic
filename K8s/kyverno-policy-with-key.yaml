@@ -1,42 +1,3 @@
-# apiVersion: kyverno.io/v1
-# kind: ClusterPolicy
-# metadata:
-#   name: attest-code-review
-# spec:
-#   validationFailureAction: Enforce
-#   background: false
-#   webhookTimeoutSeconds: 30
-#   failurePolicy: Fail
-#   rules:
-#     - name: attest
-#       match:
-#         any:
-#           - resources:
-#               kinds:
-#                 - Pod
-#       verifyImages:
-#         - imageReferences:
-#             - "*"
-#           type: Cosign 
-#           verifyDigest: true
-#           attestations:
-#             - predicateType: https://example.com/CodeReview/v1
-#               attestors:
-#                 - entries:
-#                     - keys:
-#                         publicKeys: |-
-#                           -----BEGIN PUBLIC KEY-----
-#                           MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExtjNqfMhLnSKJWXQVpHnji/CK0/b
-#                           Lkd/9O1YBvu1XspKmcKvLZJJJYqkcy6VM6DN3rnJ0GhYC7ZcqvHvOUaHGw==
-#                           -----END PUBLIC KEY-----
-#               conditions:
-#                 - all:
-#                     - key: "{{ commit_id }}"
-#                       operator: Equals
-#                       value: "${COMMIT_ID}"
-
-
-
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -49,9 +10,10 @@ spec:
   rules:
     - name: attest
       match:
-        resources:
-          kinds:
-            - Pod
+        any:
+          - resources:
+              kinds:
+                - Pod
       verifyImages:
         - imageReferences:
             - "*"
@@ -69,6 +31,10 @@ spec:
                           -----END PUBLIC KEY-----
               conditions:
                 - all:
-                    - key: "{{ commit_id }}"
+                    - key: "predicate.commit_id"
                       operator: Equals
                       value: "${COMMIT_ID}"
+
+
+
+
