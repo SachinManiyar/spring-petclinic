@@ -73,11 +73,17 @@ jobs:
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
           
-     # Step 6: Scan Docker Image with Trivy
+     # Step 6: Scan Docker Image with Trivy and Upload the result
      - name: Scan Docker Image with Trivy
        id: scan_docker_image
        run: |
          trivy image ghcr.io/dheeman2912/spring-petclinic:v1 > trivy_scan_results.txt || { echo "Error: Trivy scan failed"; exit 1; }
+         
+     - name: Upload Trivy Scan Results
+       uses: actions/upload-artifact@v3
+       with:
+        name: trivy-scan-results
+        path: trivy_scan_results.txt
 
      # Step 7: Tag Docker Image
      - name: Tag Docker Image
