@@ -69,12 +69,13 @@ jobs:
        run: |
           mvn clean package -DskipTests
           mv target/*.jar app-${BUILD_NUMBER}.jar
-
+          ls -l target/  # Debugging line to list files
       # Step 4: Generate artifact attestation
      - name: Generate artifact attestation
        uses: actions/attest-build-provenance@v1
        with:
-          subject-path: ./app.jar
+          # subject-path: ./app.jar
+          subject-path: ./app-${BUILD_NUMBER}.jar
 
       # Step 6: Generate SBOM with Syft
      - name: Generate SBOM with Syft
