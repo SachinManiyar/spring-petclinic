@@ -68,7 +68,7 @@ jobs:
      - name: Build with Maven Wrapper
        run: |
           mvn clean package -DskipTests
-          mv target/*.jar app-${BUILD_NUMBER}.jar
+          mv target/spring-petclinic-3.3.0-SNAPSHOT.jar ./app-${BUILD_NUMBER}.jar
           ls -l target/  # Debugging line to list files
       # Step 4: Generate artifact attestation
      - name: Generate artifact attestation
