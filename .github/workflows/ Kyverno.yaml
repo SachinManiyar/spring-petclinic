@@ -10,7 +10,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image:dheeman29/agent-image:v1
+      image: dheeman29/agent-image:v1
     outputs:
       image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
