@@ -57,12 +57,12 @@ jobs:
           chmod +x ./install_dependencies/install_tools.sh
           ./install_dependencies/install_tools.sh || { echo "Error: Tool installation failed"; exit 1; }
     
-     # Step 4: Run Build Script
-     - name: Run Build Script
-       id: run_build_script
-       run: |
-          chmod +x ./build/build_script.sh
-          ./build/build_script.sh || { echo "Error: Build script execution failed"; exit 1; }
+     # # Step 4: Run Build Script
+     # - name: Run Build Script
+     #   id: run_build_script
+     #   run: |
+     #      chmod +x ./build/build_script.sh
+     #      ./build/build_script.sh || { echo "Error: Build script execution failed"; exit 1; }
      # Step 3: Build with Maven Wrapper
      - name: Build with Maven Wrapper
        run: |
