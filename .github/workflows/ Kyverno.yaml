@@ -1,16 +1,16 @@
 name: DevSecOps Pipelinee
 
-on:
-  push:
-    branches:
-      - test
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - test
+#   workflow_dispatch:
 
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image: dheeman29/new_image:v3
+      image:dheeman29/agent-image:v1
     outputs:
       image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
@@ -29,12 +29,12 @@ jobs:
      - name: Capture SHA256 ID of the Image
        id: capture_sha256
        run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new_image:v3) 
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'dheeman29/agent-image:v1) 
           if [ "$REPO_DIGESTS" == "[]" ]; then
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
               exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new_image:v3 | sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/agent-image:v1 | sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
      # Step 2: Verify Container SHA256 ID        
@@ -257,7 +257,7 @@ jobs:
   Attest_Verify_Predicate:
     runs-on: ubuntu-22.04
     container:      
-      image:  dheeman29/new_image:v3
+      image: dheeman29/agent-image:v1
 
     permissions:
       security-events: write
@@ -272,12 +272,12 @@ jobs:
     # Step 1: Capture SHA256 ID of the Image
     - name: Capture SHA256 ID of the Image
       run: |
-        REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/new_image:v3) 
+        REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'dheeman29/agent-image:v1) 
         if [ "$REPO_DIGESTS" == "[]" ]; then
             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
             exit 1
         fi
-        CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/new_image:v3 | sed 's/.*@sha256://')
+        CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/agent-image:v1 | sed 's/.*@sha256://')
         echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
       shell: bash
 
@@ -346,18 +346,18 @@ jobs:
   Deploy_To_Aks:
     runs-on: ubuntu-22.04
     container:
-      image:  dheeman29/new_image:v3
+      image: dheeman29/agent-image:v1
     needs: Attest_Verify_Predicate
     steps:
       # Step 1: Capture SHA256 ID of the Image
       - name: Capture SHA256 ID of the Image
         run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'  dheeman29/new_image:v3) 
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
           if [ "$REPO_DIGESTS" == "[]" ]; then
             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
             exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'  dheeman29/new_image:v3| sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1| sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
       # Step 2: Verify Container SHA256 ID        
