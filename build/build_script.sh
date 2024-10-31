@@ -2,8 +2,10 @@
 
 # Step 3: Build with Maven Wrapper
 echo "Building with Maven Wrapper..."
+# mvn clean package -DskipTests
+# mv target/*.jar app.jar
 mvn clean package -DskipTests
-mv target/*.jar app.jar
+mv target/*.jar app-${BUILD_NUMBER}.jar
 
 # Step 4: Generate artifact attestation
 echo "Generating artifact attestation..."
