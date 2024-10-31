@@ -10,7 +10,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image: dheeman29/agent-image:v1
+      image:dheeman29/agent-image:v1
     outputs:
       image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
@@ -29,12 +29,12 @@ jobs:
      - name: Capture SHA256 ID of the Image
        id: capture_sha256
        run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
+          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'dheeman29/agent-image:v1) 
           if [ "$REPO_DIGESTS" == "[]" ]; then
               echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
               exit 1
           fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
+          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/agent-image:v1 | sed 's/.*@sha256://')
           echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
      # Step 2: Verify Container SHA256 ID        
@@ -57,60 +57,12 @@ jobs:
           chmod +x ./install_dependencies/install_tools.sh
           ./install_dependencies/install_tools.sh || { echo "Error: Tool installation failed"; exit 1; }
     
-     # # Step 4: Run Build Script
-     # - name: Run Build Script
-     #   id: run_build_script
-     #   run: |
-     #      chmod +x ./build/build_script.sh
-     #      ./build/build_script.sh || { echo "Error: Build script execution failed"; exit 1; }
-     
-     # Step 3: Build with Maven Wrapper
-     - name: Build with Maven Wrapper
+     # Step 4: Run Build Script
+     - name: Run Build Script
+       id: run_build_script
        run: |
-          mvn clean package -DskipTests
-          mv target/spring-petclinic-3.3.0-SNAPSHOT.jar ./app-${BUILD_NUMBER}.jar
-          ls -l target/  # Debugging line to list files
-      # Step 4: Generate artifact attestation
-     - name: Generate artifact attestation
-       uses: actions/attest-build-provenance@v1
-       with:
-          # subject-path: ./app.jar
-          subject-path: ./app-${BUILD_NUMBER}.jar
-
-      # Step 6: Generate SBOM with Syft
-     - name: Generate SBOM with Syft
-       run: |
-          syft dir:. -o cyclonedx-json > sbom.json || { echo "Error: SBOM generation failed"; exit 1; }
-          echo "SBOM generated successfully."
-
-      # Step 7: Upload SBOM
-     - name: Upload SBOM
-       uses: actions/upload-artifact@v4
-       with:
-          name: sbom
-          path: sbom.json
-       continue-on-error: false  # Workflow will stop if SBOM upload fails
-
-      # Step 10: Generate SBOM attestation
-     - name: Generate SBOM attestation
-       uses: actions/attest-sbom@v1
-       with:
-          subject-path: ./sbom.json
-          sbom-path: ./sbom.json
-       continue-on-error: false  # Ensures the pipeline halts if the attestation fails
-
-      # Step 11: Verify SBOM attestation
-     - name: Verify SBOM attestation
-       env:
-          GH_TOKEN: ${{ secrets.CR_Password }}
-       run: |
-          gh attestation verify ./sbom.json --owner dheeman2912 --format=json | jq . || { echo "Error: SBOM attestation verification failed"; exit 1; }
-          echo "SBOM attestation verified successfully."
-
-      # Step 12: Build Docker Image using Maven
-     - name: Build Docker Image
-       run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true || { echo "Error:Docker image build failed"; exit 1; }
-        echo "Docker image built successfully."
+          chmod +x ./build/build_script.sh
+          ./build/build_script.sh || { echo "Error: Build script execution failed"; exit 1; }
           
      # Step 5: Log in to GitHub Container Registry
      - name: Log in to GitHub Container Registry
@@ -326,12 +278,12 @@ jobs:
     # Step 1: Capture SHA256 ID of the Image
     - name: Capture SHA256 ID of the Image
       run: |
-        REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
+        REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}'dheeman29/agent-image:v1) 
         if [ "$REPO_DIGESTS" == "[]" ]; then
             echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
             exit 1
         fi
-        CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
+        CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}'dheeman29/agent-image:v1 | sed 's/.*@sha256://')
         echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
       shell: bash
 
@@ -479,15 +431,6 @@ jobs:
           echo "Managed Identity verified successfully."
          fi
 
-    # # Step 9: Apply Kyverno Policy
-    #   - name: Apply Kyverno Policy
-    #     run: |
-    #      if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
-    #       echo "Kyverno policy applied successfully."
-    #      else
-    #       echo "Error applying Kyverno policy."
-    #       exit 1
-    #      fi
 
     # Step 10: Deploy to AKS
       - name: Deploy to AKS
