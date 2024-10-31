@@ -63,6 +63,47 @@ jobs:
        run: |
           chmod +x ./build/build_script.sh
           ./build/build_script.sh || { echo "Error: Build script execution failed"; exit 1; }
+     # Step 3: Build with Maven Wrapper
+     - name: Build with Maven Wrapper
+       run: |
+          mvn clean package -DskipTests
+          mv target/*.jar app.jar
+
+      # Step 4: Generate artifact attestation
+     - name: Generate artifact attestation
+       uses: actions/attest-build-provenance@v1
+       with:
+          subject-path: ./app.jar
+
+      # Step 6: Generate SBOM with Syft
+     - name: Generate SBOM with Syft
+       run: |
+          syft dir:. -o cyclonedx-json > sbom.json
+
+      # Step 7: Upload SBOM
+     - name: Upload SBOM
+       uses: actions/upload-artifact@v4
+       with:
+          name: sbom
+          path: sbom.json
+
+      # Step 10: Generate SBOM attestation
+     - name: Generate SBOM attestation
+       uses: actions/attest-sbom@v1
+       with:
+          subject-path: ./sbom.json
+          sbom-path: ./sbom.json
+
+      # Step 11: Verify SBOM attestation
+     - name: Verify SBOM attestation
+       env:
+          GH_TOKEN: ${{ secrets.CR_Password }}
+       run: |
+          gh attestation verify ./sbom.json --owner dheeman2912 --format=json | jq .
+
+      # Step 12: Build Docker Image using Maven
+     - name: Build Docker Image
+       run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
           
      # Step 5: Log in to GitHub Container Registry
      - name: Log in to GitHub Container Registry
