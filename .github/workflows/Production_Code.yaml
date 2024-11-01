@@ -1,4 +1,4 @@
-name: DevSecOps Pipelinee
+name: DevSecOps Pipeline
 
 on:
   push:
@@ -484,7 +484,7 @@ jobs:
          fi
 
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: trivy-scan-results
  
