@@ -282,19 +282,7 @@ jobs:
        uses: actions/upload-artifact@v3
        with:
           name: git-details
-          path: output.json
-    
-     # Step 22: Extract Commit ID
-     - name: Extract Commit ID
-       id: extract_commit_id
-       run: |
-          # Print output.json content for debugging
-          cat output.json
-          # Extract commit_id and check for errors
-          COMMIT_ID=$(jq -r '.commit_id' output.json) || { echo "Failed to extract commit_id"; exit 1; }
-          echo "COMMIT_ID=$COMMIT_ID" >> $GITHUB_ENV
-          echo "Extracted Commit ID: $COMMIT_ID"  # Debug output to confirm extraction
-         
+          path: output.json    
 
   Attest_Verify_Predicate:
     runs-on: ubuntu-22.04
