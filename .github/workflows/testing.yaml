@@ -53,7 +53,7 @@ jobs:
      # Step 3: Install Tools
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
-       id:  Install Necessary Tools and Dependencies
+       id: install_tools_and_dependencies
        run: |
           chmod +x ./install_dependencies/install_tools.sh
       
