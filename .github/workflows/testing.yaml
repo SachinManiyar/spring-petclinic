@@ -122,7 +122,7 @@ jobs:
     # Check if the upload was successful
      - name: Check SBOM Upload Status
        run: |
-        if [ "${{ steps.upload_sbom.outcome }}" == "success" ]; then
+        if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
           echo "SBOM file uploaded successfully."
         else
           echo "Error: Failed to upload SBOM file."
