@@ -6,6 +6,11 @@ on:
       - test
   workflow_dispatch:
 
+env:
+  SBOM_FILE: sbom.json
+  SOURCE_DIR: .  
+  OUTPUT_FORMAT: cyclonedx-json  
+  
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
@@ -92,10 +97,11 @@ jobs:
   #      with:
   #         subject-path: ./app.jar
 
-  #     # Step 6: Generate SBOM with Syft
-  #    - name: Generate SBOM with Syft
-  #      run: |
-  #         syft dir:. -o cyclonedx-json > sbom.json
+      # Step 6: Generate SBOM with Syft
+     - name: Generate SBOM with Syft
+       run: |
+          syft dir:${SOURCE_DIR} -o ${OUTPUT_FORMAT} > ${SBOM_FILE}
+
 
   #     # Step 7: Upload SBOM
   #    - name: Upload SBOM
