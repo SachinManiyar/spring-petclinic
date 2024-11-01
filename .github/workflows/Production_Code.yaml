@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-scan:
-    runs-on: abc
+    runs-on: ubuntu-22.04
     container:
       image: dheeman29/agent-image:v1
     outputs:
