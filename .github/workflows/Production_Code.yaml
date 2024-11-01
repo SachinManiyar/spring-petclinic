@@ -1,10 +1,10 @@
 name: DevSecOps Pipeline
 
-on:
-  push:
-    branches:
-      - test
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - test
+#   workflow_dispatch:
 
 jobs:
   build-and-scan:
@@ -265,15 +265,17 @@ jobs:
             --arg branch "$BRANCH_NAME" \
             --arg uri "$REPO_URL" \
             '{
-              commit_id: $commit_id,
-              author_name: $author_name,
-              author_email: $author_email,
+              commit_id: $git_commit_id,
+              author_name: $git_author_name,
+              author_email: $git_author_email,
               branch: $branch,
               uri: $uri
             }')
           # Save JSON output to a file
-          echo "$OUTPUT" > output.json
-          # Print the contents of the JSON file
+          echo "$OUTPUT" > predicat.json
+          echo "sbomfile conyent for this image: -------------------------------------- " >> predicat.json
+          cat sbom.json >> predicate.json
+           # Print the contents of the JSON file
           cat output.json
           
      # Step 21: Upload JSON file
