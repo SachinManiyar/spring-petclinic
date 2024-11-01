@@ -1,10 +1,10 @@
 name: DevSecOps Pipeline
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 jobs:
   build-and-scan:
@@ -471,3 +471,22 @@ jobs:
           echo "Error deploying service."
           exit 1
          fi
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: trivy-scan-results
+ 
+      - name: Send email with artifact
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}      # Your email
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}      # Your email password or API key
+          RECIPIENTS: user1@example.com,user2@example.com  # Comma-separated list of recipients
+        run: |
+          # Install mailx or use a similar tool
+          sudo apt-get install -y mailutils
+          # Create a temporary file for the email content
+          echo "Please find the attached artifact." > email_body.txt
+          # Send email with attachment
+          echo "Sending email..."
+          echo "Subject: Artifacts from GitHub Actions" | cat - email_body.txt | mail -a output/artifact.txt -s "Artifacts from CI" $RECIPIENTS
