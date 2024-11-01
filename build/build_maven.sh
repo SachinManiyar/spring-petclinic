@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Redirect all output (stdout and stderr) to build.log
+exec &> build.log
+
 echo "Starting Maven build..."
 mvn clean package -DskipTests
 if [ $? -ne 0 ]; then
