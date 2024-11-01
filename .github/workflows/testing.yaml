@@ -55,17 +55,18 @@ jobs:
      - name: Install Necessary Tools and Dependencies
        id: install_tools_and_dependencies
        run: |
-          chmod +x ./install_dependencies/install_tools.sh
-      
-          echo "Starting tool installation..."
-          {
-            ./install_dependencies/install_tools.sh 2>&1 | tee install_dependency.log
-          } || {
-            echo "Error: Tool installation failed. Check installation_log.log for details."
-            exit 1
-          }
-          
-          echo "Tool installation completed successfully."
+        chmod +x ./install_dependencies/install_tools.sh
+    
+        echo "Starting tool installation..."
+        {
+          ./install_dependencies/install_tools.sh
+        } || {
+          echo "Error: Tool installation failed."
+          exit 1
+        }
+        
+        echo "Tool installation completed successfully."
+
 
     
   #    # Step 3: Build with Maven Wrapper
