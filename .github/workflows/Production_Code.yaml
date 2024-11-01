@@ -495,7 +495,7 @@ jobs:
           RECIPIENTS: dheeman.das@pwc.com,saurav.d.kumar@pwc.com  # Comma-separated list of recipients
         run: |
           # Install mailx or use a similar tool
-          sudo apt-get install -y mailutils
+          apt-get install -y mailutils
           # Create a temporary file for the email content
           echo "Please find the attached artifact." > email_body.txt
           # Send email with attachment
