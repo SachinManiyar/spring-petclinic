@@ -131,20 +131,21 @@ jobs:
 
       # Step 10: Generate SBOM attestation
      - name: Generate SBOM attestation
+       id: attest_sbom
        uses: actions/attest-sbom@v1
        with:
           subject-path: ${{ env.SBOM_FILE }}  
           sbom-path: ${{ env.SBOM_FILE }}  
-
-     # Check if SBOM attestation was successful
      - name: Check SBOM attestation result
        run: |
-          if [ "${{ steps.attest_sbom.outcome }}" != "success" ]; then
-            echo "Error: SBOM attestation failed."
-            exit 1
-          else
-            echo "SBOM attestation completed successfully."
-          fi
+        echo "Checking SBOM attestation result..."
+        # Check if the attest_sbom step was successful
+        if [ "${{ steps.attest_sbom.outcome }}" != "success" ]; then
+          echo "Error: SBOM attestation failed."
+          exit 1
+        else
+          echo "SBOM attestation completed successfully."
+        fi
 
       # Step 11: Verify SBOM attestation
      - name: Verify SBOM attestation
