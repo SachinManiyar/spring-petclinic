@@ -72,7 +72,8 @@ jobs:
      # Step 3: Build with Maven Wrapper
      - name: Build with Maven Wrapper
        run: |
-        ./build_maven.sh
+        echo "Starting Build with Maven Wrapper..."
+        chmod +x ./build/build_maven.sh
         if [ $? -ne 0 ]; then
           echo "Error: Maven build process failed. Please check the logs."
           exit 1
