@@ -76,20 +76,20 @@ jobs:
         echo "Tool installation completed successfully."
 
      # Step 3: Build with Maven Wrapper
-     # - name: Build with Maven Wrapper
-     #   run: |
-     #    echo "Starting Build with Maven Wrapper..."
-     #    chmod +x ./build/build_maven.sh
-     #    ./build/build_maven.sh
-     #    if [ $? -ne 0 ]; then
-     #      echo "Error: Maven build process failed. Please check the logs."
-     #      exit 1
-     #    else
-     #      echo "Maven build completed successfully."
-     #    fi
-     #    # Display the logs
-     #    echo "Build logs:"
-     #    cat build.log
+     - name: Build with Maven Wrapper
+       run: |
+        echo "Starting Build with Maven Wrapper..."
+        chmod +x ./build/build_maven.sh
+        ./build/build_maven.sh
+        if [ $? -ne 0 ]; then
+          echo "Error: Maven build process failed. Please check the logs."
+          exit 1
+        else
+          echo "Maven build completed successfully."
+        fi
+        # Display the logs
+        echo "Build logs:"
+        cat build.log
 
 
   #     # Step 4: Generate artifact attestation
