@@ -1,10 +1,10 @@
 name: DevSecOps Pipelinee
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 env:
   SBOM_FILE: sbom.json
@@ -158,9 +158,9 @@ jobs:
             exit 1
           fi
 
-  #     # Step 12: Build Docker Image using Maven
-  #    - name: Build Docker Image
-  #      run: ./mvnw clean spring-boot:build-image -Dmaven.test.skip=true
+      # Step 12: Build Docker Image using Maven
+     - name: Build Docker Image
+       run: ./build/dockerfile_build.sh
           
   #    # Step 5: Log in to GitHub Container Registry
   #    - name: Log in to GitHub Container Registry
