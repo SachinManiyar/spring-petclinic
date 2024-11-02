@@ -236,16 +236,7 @@ jobs:
           fi
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
 
-     - name: Inspect Pushed Docker Image by SHA256
-       run: |
-        IMAGE_SHA=${{ env.IMAGE_SHA }}
-        if docker inspect "${{ secrets.IMAGE_NAME }}@sha256:$IMAGE_SHA"; then
-          echo "Success: Docker image inspected successfully."
-        else
-          echo "Error: Inspecting Docker image failed."
-          exit 1
-        fi
-     
+
      # Step 10: Sign Docker Image
      - name: Sign Docker Image
        id: sign_docker_image
@@ -273,60 +264,60 @@ jobs:
             exit 1
           fi
         
-     # # Step 13: Attach SBOM
-     # # - name: Attach SBOM
-     # #   id: attach_sbom
-     # #   run: |
-     # #      set -e
-     # #      output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
-     # #      echo "cat output --> showing output below"
-     # #      echo "output: $output"
-     # #      sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
-     # #      if [ -z "$sbom_filename" ]; then
-     # #        echo "Error: No SBOM filename found in the output"
-     # #        exit 1
-     # #      fi
-     # #      echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
-
-
-     # - name: Attach SBOM with Application Docker Image
+     # Step 13: Attach SBOM
+     # - name: Attach SBOM
      #   id: attach_sbom
      #   run: |
-     #    set -e
-     #    echo "Attaching SBOM to the Docker image..."
-     #    output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
-     #      echo "Error: Failed to run cosign attach sbom."
-     #      echo "Output: $output"
-     #      exit 1
-     #    }
+     #      set -e
+     #      output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
+     #      echo "cat output --> showing output below"
+     #      echo "output: $output"
+     #      sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
+     #      if [ -z "$sbom_filename" ]; then
+     #        echo "Error: No SBOM filename found in the output"
+     #        exit 1
+     #      fi
+     #      echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+
+
+     - name: Attach SBOM with Application Docker Image
+       id: attach_sbom
+       run: |
+        set -e
+        echo "Attaching SBOM to the Docker image..."
+        output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
+          echo "Error: Failed to run cosign attach sbom."
+          echo "Output: $output"
+          exit 1
+        }
     
-     #    echo "Success: SBOM attached successfully."
-     #    echo "Command output:"
-     #    echo "$output"
+        echo "Success: SBOM attached successfully."
+        echo "Command output:"
+        echo "$output"
     
-     #    # Extract SBOM filename from the output
-     #    sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
-     #      echo "Error: Failed to extract SBOM filename."
-     #      echo "Output: $output"
-     #      exit 1
-     #    }
+        # Extract SBOM filename from the output
+        sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
+          echo "Error: Failed to extract SBOM filename."
+          echo "Output: $output"
+          exit 1
+        }
     
-     #    # Check if sbom_filename is empty
-     #    if [ -z "$sbom_filename" ]; then
-     #      echo "Error: No SBOM filename found in the output."
-     #      echo "Output: $output"
-     #      exit 1
-     #    fi
+        # Check if sbom_filename is empty
+        if [ -z "$sbom_filename" ]; then
+          echo "Error: No SBOM filename found in the output."
+          echo "Output: $output"
+          exit 1
+        fi
     
-     #    echo "Success: SBOM filename extracted: $sbom_filename."
+        echo "Success: SBOM filename extracted: $sbom_filename."
     
-     #    # Extract the SHA from the SBOM filename
-     #    sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
-     #    echo "SBOM SHA: $sbom_sha"
+        # Extract the SHA from the SBOM filename
+        sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
+        echo "SBOM SHA: $sbom_sha"
     
-     #    # Store the SBOM filename and SHA as environment variables for later use
-     #    echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
-     #    echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
+        # Store the SBOM filename and SHA as environment variables for later use
+        echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+        echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
 
 
   #    # Step 14: Sign the SBOM attached with the Image
