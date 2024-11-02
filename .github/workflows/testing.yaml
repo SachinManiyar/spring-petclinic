@@ -350,7 +350,7 @@ jobs:
      - name: Sign SBOM
        id: sign_sbom_blob
        run: |
-          cosign sign-blob --yes --key env://COSIGN_KEY $SBOM_FILENAME --bundle cosign.bundle 2>&1 && { echo "Success: Signing SBOM is succesfull"; } || { echo "Error: Signing SBOM failed"; exit 1; }
+          cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1 && { echo "Success: Signing SBOM is succesfull"; } || { echo "Error: Signing SBOM failed"; exit 1; }
        env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
