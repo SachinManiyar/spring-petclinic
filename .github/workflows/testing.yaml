@@ -138,6 +138,7 @@ jobs:
        with:
           subject-path: ${{ env.SBOM_FILE }}  
           sbom-path: ${{ env.SBOM_FILE }}  
+          
      - name: Check SBOM attestation result
        run: |
         echo "Checking SBOM attestation result..."
@@ -162,21 +163,31 @@ jobs:
 
       # Step 12: Build Application Docker Image using Maven
      - name: Build Application Docker Image using Maven
-       run: chmod +x ./build/dockerfile_build.sh
+       run: |
+          chmod +x ./build/dockerfile_build.sh
+          if ./build/dockerfile_build.sh; then
+            echo "Success: Docker image built successfully."
+          else
+            echo "Error: Docker image build failed."
+            exit 1
+          fi
 
      # Step 9: Get SHA256 of the Pushed Docker Image
      - name: Get SHA256 ID of Application Docker Image
        id: get_image_sha
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} | cut -d'@' -f2)
+          if [ -z "$IMAGE_SHA" ]; then
+            echo "Error: Failed to get IMAGE_SHA."
+            exit 1
+          fi
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
-          echo "::set-output name=image_sha::$IMAGE_SHA"
           
      # Step 6: Scan Docker Image with Trivy and Upload the result
      - name: Scan Application Docker Image with Trivy
        id: scan_docker_image
        run: |
-         trivy image ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         trivy image ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
          echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
 
      - name: Upload Trivy Scan Results
@@ -198,14 +209,14 @@ jobs:
      - name: Push Application Docker Image to GitHub Container Registry
        id: push_docker_image
        run: |
-          if docker push ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }}; then
+          if docker push ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }}; then
             echo "Success: Docker image pushed successfully."
           else
             echo "Error: Pushing Docker image failed."
             exit 1
           fi
       
-          if docker inspect ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }}; then
+          if docker inspect ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }}; then
             echo "Success: Docker image inspected successfully."
           else
             echo "Error: Inspecting Docker image failed."
@@ -213,87 +224,87 @@ jobs:
           fi
 
 
-     # Step 10: Sign Docker Image
-     - name: Sign Docker Image
-       id: sign_docker_image
-       run: |
-          echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
-          chmod 600 cosign.key
-          
-          if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} --yes; then
-            echo "Success: Docker image signed successfully."
-          else
-            echo "Error: Signing Docker image failed."
-            exit 1
-          fi
-       env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-
-     # Step 11: Public Key Creation
-     - name: Public Key Creation
-       id: create_public_key
-       run: |
-          if cosign public-key --key ${{ secrets.COSIGN_KEY }} --passphrase ${{ secrets.COSIGN_PASSPHRASE }} > ${{ env.PUBLIC_KEY_FILE }}; then
-            echo "Success: Public key created successfully and saved to${{ env.PUBLIC_KEY_FILE }}."
-          else
-            echo "Error: Public key creation failed."
-            exit 1
-          f
-        
-     # Step 13: Attach SBOM
-     # - name: Attach SBOM
-     #   id: attach_sbom
+     # # Step 10: Sign Docker Image
+     # - name: Sign Docker Image
+     #   id: sign_docker_image
      #   run: |
-     #      set -e
-     #      output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
-     #      echo "cat output --> showing output below"
-     #      echo "output: $output"
-     #      sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
-     #      if [ -z "$sbom_filename" ]; then
-     #        echo "Error: No SBOM filename found in the output"
+     #      echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
+     #      chmod 600 cosign.key
+          
+     #      if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} --yes; then
+     #        echo "Success: Docker image signed successfully."
+     #      else
+     #        echo "Error: Signing Docker image failed."
      #        exit 1
      #      fi
-     #      echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+     #   env:
+     #      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     # # Step 11: Public Key Creation
+     # - name: Public Key Creation
+     #   id: create_public_key
+     #   run: |
+     #      if cosign public-key --key ${{ secrets.COSIGN_KEY }} --passphrase ${{ secrets.COSIGN_PASSPHRASE }} > ${{ env.PUBLIC_KEY_FILE }}; then
+     #        echo "Success: Public key created successfully and saved to${{ env.PUBLIC_KEY_FILE }}."
+     #      else
+     #        echo "Error: Public key creation failed."
+     #        exit 1
+     #      f
+        
+     # # Step 13: Attach SBOM
+     # # - name: Attach SBOM
+     # #   id: attach_sbom
+     # #   run: |
+     # #      set -e
+     # #      output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
+     # #      echo "cat output --> showing output below"
+     # #      echo "output: $output"
+     # #      sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
+     # #      if [ -z "$sbom_filename" ]; then
+     # #        echo "Error: No SBOM filename found in the output"
+     # #        exit 1
+     # #      fi
+     # #      echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
 
 
-     - name: Attach SBOM with Application Docker Image
-       id: attach_sbom
-       run: |
-        set -e
-        echo "Attaching SBOM to the Docker image..."
-        output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
-          echo "Error: Failed to run cosign attach sbom."
-          echo "Output: $output"
-          exit 1
-        }
+     # - name: Attach SBOM with Application Docker Image
+     #   id: attach_sbom
+     #   run: |
+     #    set -e
+     #    echo "Attaching SBOM to the Docker image..."
+     #    output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
+     #      echo "Error: Failed to run cosign attach sbom."
+     #      echo "Output: $output"
+     #      exit 1
+     #    }
     
-        echo "Success: SBOM attached successfully."
-        echo "Command output:"
-        echo "$output"
+     #    echo "Success: SBOM attached successfully."
+     #    echo "Command output:"
+     #    echo "$output"
     
-        # Extract SBOM filename from the output
-        sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
-          echo "Error: Failed to extract SBOM filename."
-          echo "Output: $output"
-          exit 1
-        }
+     #    # Extract SBOM filename from the output
+     #    sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
+     #      echo "Error: Failed to extract SBOM filename."
+     #      echo "Output: $output"
+     #      exit 1
+     #    }
     
-        # Check if sbom_filename is empty
-        if [ -z "$sbom_filename" ]; then
-          echo "Error: No SBOM filename found in the output."
-          echo "Output: $output"
-          exit 1
-        fi
+     #    # Check if sbom_filename is empty
+     #    if [ -z "$sbom_filename" ]; then
+     #      echo "Error: No SBOM filename found in the output."
+     #      echo "Output: $output"
+     #      exit 1
+     #    fi
     
-        echo "Success: SBOM filename extracted: $sbom_filename."
+     #    echo "Success: SBOM filename extracted: $sbom_filename."
     
-        # Extract the SHA from the SBOM filename
-        sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
-        echo "SBOM SHA: $sbom_sha"
+     #    # Extract the SHA from the SBOM filename
+     #    sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
+     #    echo "SBOM SHA: $sbom_sha"
     
-        # Store the SBOM filename and SHA as environment variables for later use
-        echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
-        echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
+     #    # Store the SBOM filename and SHA as environment variables for later use
+     #    echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+     #    echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
 
 
   #    # Step 14: Sign the SBOM attached with the Image
