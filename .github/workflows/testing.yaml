@@ -230,11 +230,8 @@ jobs:
        id: get_image_sha
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }} | cut -d'@' -f2)
-          if [ -z "$IMAGE_SHA" ]; then
-            echo "Error: Failed to get IMAGE_SHA."
-            exit 1
-          fi
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "::set-output name=image_sha::$IMAGE_SHA"
 
 
      # Step 10: Sign Docker Image
@@ -244,13 +241,14 @@ jobs:
           echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
           chmod 600 cosign.key
           
-          if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} --yes; then
+          if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes; then
             echo "Success: Docker image signed successfully."
           else
             echo "Error: Signing Docker image failed."
             exit 1
           fi
        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
      # Step 11: Public Key Creation
