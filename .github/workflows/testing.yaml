@@ -181,24 +181,13 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
-
-      # Step 8:Push Docker Image to Github Container Registry
-     - name: Push Application Docker Image to GitHub Container Registry
-       id: push_docker_image
-       run: |
-          if docker push ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}; then
-            echo "Success: Docker image pushed successfully."
-          else
-            echo "Error: Pushing Docker image failed."
-            exit 1
-          fi
           
 
      # Step 6: Scan Docker Image with Trivy and Upload the result
      - name: Scan Application Docker Image with Trivy
        id: scan_docker_image
        run: |
-         trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
          echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
 
      - name: Upload Trivy Scan Results
@@ -207,11 +196,40 @@ jobs:
         name: trivy-scan-results
         path: ${{ env.LOG_FILE }}
 
+     
+     - name: Tag Docker Image
+       id: tag_docker_image
+       run: |
+        # Define variables from secrets
+        IMAGE_TAG="${{ secrets.IMAGE_TAG }}"          
+        IMAGE_NAME="${{ secrets.IMAGE_NAME }}"       
+        IMAGE_VERSION="${{ secrets.IMAGE_VERSION }}" 
+    
+        # Tag the Docker image
+        if docker tag "$IMAGE_TAG" "$IMAGE_NAME:$IMAGE_VERSION"; then
+          echo "Success: Docker image tagged successfully."
+        else
+          echo "Error: Tagging Docker image failed."
+          exit 1
+        fi  
+         
+
+       # Step 8:Push Docker Image to Github Container Registry
+     - name: Push Application Docker Image to GitHub Container Registry
+       id: push_docker_image
+       run: |
+          if docker push ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION}}; then
+            echo "Success: Docker image pushed successfully."
+          else
+            echo "Error: Pushing Docker image failed."
+            exit 1
+          fi
+
       # Step 9: Get SHA256 of the Pushed Docker Image
      - name: Get SHA256 ID of Application Docker Image
        id: get_image_sha
        run: |
-          IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} | cut -d'@' -f2)
+          IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }} | cut -d'@' -f2)
           if [ -z "$IMAGE_SHA" ]; then
             echo "Error: Failed to get IMAGE_SHA."
             exit 1
