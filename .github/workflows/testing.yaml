@@ -355,23 +355,6 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: upload Signed SBOM to Github Registry
-       run: |
-          # set -e  # Exit on error
-          output2=$(cosign upload blob -f cosign.bundle  ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1) #| jq .) #|| { echo "Failed to upload the blob to the Registry"; exit 1; }
-          echo "output: $output2"
-          sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
-          echo "sbom_file: $sbom_file"
-          
-     - name: Verify SBOM Uploaded to Image Repo
-       run: |
-          
-          cosign verify-blob $SBOM_FILENAME  --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
-       shell: bash
-       env:
-          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
-          AppName: 'spring-petclinic'
 
      # Step 19: Set Git safe directory
      - name: Set Git Safe Directory
@@ -417,27 +400,7 @@ jobs:
           # Save JSON output to a file
           echo "$OUTPUT" > output.json
           # Print the contents of the JSON file
-          cat output.json
-          
-     # Step 21: Upload JSON file
-     - name: Upload JSON file
-       id: upload_json_file
-       uses: actions/upload-artifact@v3
-       with:
-          name: git-details
-          path: output.json
-    
-     # Step 22: Extract Commit ID
-     - name: Extract Commit ID
-       id: extract_commit_id
-       run: |
-          # Print output.json content for debugging
-          cat output.json
-          # Extract commit_id and check for errors
-          COMMIT_ID=$(jq -r '.commit_id' output.json) || { echo "Failed to extract commit_id"; exit 1; }
-          echo "COMMIT_ID=$COMMIT_ID" >> $GITHUB_ENV
-          echo "Extracted Commit ID: $COMMIT_ID"  # Debug output to confirm extraction
-         
+          cat output.json   
 
     # Step 8: Attestation using Predicate
      - name: Attest Image using Predicate
