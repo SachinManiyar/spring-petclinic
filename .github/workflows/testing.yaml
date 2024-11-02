@@ -158,8 +158,8 @@ jobs:
             exit 1
           fi
 
-      # Step 12: Build Docker Image using Maven
-     - name: Build Docker Image
+      # Step 12: Build Application Docker Image using Maven
+     - name: Build Application Docker Image using Maven
        run: ./build/dockerfile_build.sh
           
   #    # Step 5: Log in to GitHub Container Registry
