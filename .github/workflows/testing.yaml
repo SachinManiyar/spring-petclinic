@@ -13,7 +13,6 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
-  PUBLIC_KEY_FILE: "cosign.pub"
   
 jobs:
   build-and-scan:
@@ -251,16 +250,19 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     # Step 11: Public Key Creation
      - name: Public Key Creation
        id: create_public_key
        run: |
-          if cosign public-key --key ${{ secrets.COSIGN_KEY }} --passphrase ${{ secrets.COSIGN_PASSPHRASE }} > ${{ env.PUBLIC_KEY_FILE }}; then
-            echo "Success: Public key created successfully and saved to${{ env.PUBLIC_KEY_FILE }}."
+        if cosign public-key --key env://COSIGN_KEY > cosign.pub 
+           echo "Success: Cosign Public Key Created successfully."
           else
-            echo "Error: Public key creation failed."
+            echo "Error: Cosign Public Key Creation failed."
             exit 1
-          fi
+          fi   
+       env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
         
      # Step 13: Attach SBOM
      # - name: Attach SBOM
@@ -283,7 +285,7 @@ jobs:
        run: |
         set -e
         echo "Attaching SBOM to the Docker image..."
-        output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
+        output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1) || {
           echo "Error: Failed to run cosign attach sbom."
           echo "Output: $output"
           exit 1
