@@ -11,7 +11,9 @@ env:
   SOURCE_DIR: .  
   OUTPUT_FORMAT: cyclonedx-json
   OWNER: ${{ secrets.OWNER_NAME }} 
-  GH_TOKEN: ${{ secrets.CR_PASSWORD }} 
+  GH_TOKEN: ${{ secrets.CR_PASSWORD }}
+  LOG_FILE: "trivy_scan_results.log"
+  PUBLIC_KEY_FILE: "cosign.pub"
   
 jobs:
   build-and-scan:
@@ -74,20 +76,20 @@ jobs:
         echo "Tool installation completed successfully."
 
      # Step 3: Build with Maven Wrapper
-     - name: Build with Maven Wrapper
-       run: |
-        echo "Starting Build with Maven Wrapper..."
-        chmod +x ./build/build_maven.sh
-        ./build/build_maven.sh
-        if [ $? -ne 0 ]; then
-          echo "Error: Maven build process failed. Please check the logs."
-          exit 1
-        else
-          echo "Maven build completed successfully."
-        fi
-        # Display the logs
-        echo "Build logs:"
-        cat build.log
+     # - name: Build with Maven Wrapper
+     #   run: |
+     #    echo "Starting Build with Maven Wrapper..."
+     #    chmod +x ./build/build_maven.sh
+     #    ./build/build_maven.sh
+     #    if [ $? -ne 0 ]; then
+     #      echo "Error: Maven build process failed. Please check the logs."
+     #      exit 1
+     #    else
+     #      echo "Maven build completed successfully."
+     #    fi
+     #    # Display the logs
+     #    echo "Build logs:"
+     #    cat build.log
 
 
   #     # Step 4: Generate artifact attestation
@@ -160,90 +162,139 @@ jobs:
 
       # Step 12: Build Application Docker Image using Maven
      - name: Build Application Docker Image using Maven
-       run: ./build/dockerfile_build.sh
+       run: chmod +x ./build/dockerfile_build.sh
+
+     # Step 9: Get SHA256 of the Pushed Docker Image
+     - name: Get SHA256 ID of Application Docker Image
+       id: get_image_sha
+       run: |
+          IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} | cut -d'@' -f2)
+          echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "::set-output name=image_sha::$IMAGE_SHA"
           
-  #    # Step 5: Log in to GitHub Container Registry
-  #    - name: Log in to GitHub Container Registry
-  #      id: login_registry
-  #      uses: docker/login-action@v2
-  #      with:
-  #         username: ${{ secrets.CR_Username }}
-  #         password: ${{ secrets.CR_Password }}
-  #         registry: ghcr.io
+     # Step 6: Scan Docker Image with Trivy and Upload the result
+     - name: Scan Application Docker Image with Trivy
+       id: scan_docker_image
+       run: |
+         trivy image ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
+
+     - name: Upload Trivy Scan Results
+       uses: actions/upload-artifact@v3
+       with:
+        name: trivy-scan-results
+        path: ${{ env.LOG_FILE }}
+
+     # Step 5: Log in to GitHub Container Registry
+     - name: Log in to GitHub Container Registry
+       id: login_registry
+       uses: docker/login-action@v2
+       with:
+          username: ${{ secrets.CR_Username }}
+          password: ${{ secrets.CR_Password }}
+          registry: ghcr.io
+
+     # Step 8:Push Docker Image to Github Container Registry
+     - name: Push Application Docker Image to GitHub Container Registry
+       id: push_docker_image
+       run: |
+          if docker push ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }}; then
+            echo "Success: Docker image pushed successfully."
+          else
+            echo "Error: Pushing Docker image failed."
+            exit 1
+          fi
+      
+          if docker inspect ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }}; then
+            echo "Success: Docker image inspected successfully."
+          else
+            echo "Error: Inspecting Docker image failed."
+            exit 1
+          fi
+
+
+     # Step 10: Sign Docker Image
+     - name: Sign Docker Image
+       id: sign_docker_image
+       run: |
+          echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
+          chmod 600 cosign.key
           
-  #    # Step 6: Scan Docker Image with Trivy and Upload the result
-  #    - name: Scan Docker Image with Trivy
-  #      id: scan_docker_image
-  #      run: |
-  #        trivy image ghcr.io/dheeman2912/spring-petclinic:v1 > trivy_scan_results.txt || { echo "Error: Trivy scan failed"; exit 1; }
-         
-  #    - name: Upload Trivy Scan Results
-  #      uses: actions/upload-artifact@v3
-  #      with:
-  #       name: trivy-scan-results
-  #       path: trivy_scan_results.txt
+          if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} --yes; then
+            echo "Success: Docker image signed successfully."
+          else
+            echo "Error: Signing Docker image failed."
+            exit 1
+          fi
+       env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-  #    # Step 7: Tag Docker Image
-  #    - name: Tag Docker Image
-  #      id: tag_docker_image
-  #      run: |
-  #        docker tag docker.io/library/spring-petclinic:3.3.0-SNAPSHOT ghcr.io/dheeman2912/spring-petclinic:v1 || { echo "Error: Tagging Docker image failed"; exit 1; }
-
-  #    # Step 8: Push Docker Image
-  #    - name: Push Docker Image
-  #      id: push_docker_image
-  #      run: |
-  #         docker push ghcr.io/dheeman2912/spring-petclinic:v1 || { echo "Error: Pushing Docker image failed"; exit 1; }
-  #         docker inspect ghcr.io/dheeman2912/spring-petclinic:v1 || { echo "Error: Inspecting Docker image failed"; exit 1; }
-
-  #    # Step 9: Get SHA256 of the Pushed Docker Image
-  #    - name: Get SHA256 of Docker Image
-  #      id: get_image_sha
-  #      run: |
-  #         IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/dheeman2912/spring-petclinic:v1 | cut -d'@' -f2)
-  #         echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
-  #         echo "::set-output name=image_sha::$IMAGE_SHA"
-
-  #    # Step 10: Sign Docker Image
-  #    - name: Sign Docker Image
-  #      id: sign_docker_image
-  #      run: |
-  #         echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
-  #         chmod 600 cosign.key
-  #         cosign sign --key cosign.key ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} --yes || { echo "Error: Signing Docker image failed"; exit 1; }
-  #      env:
-  #         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-  #         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-
-  #    # Step 11: Public Key Creation
-  #    - name: Public Key Creation
-  #      id: create_public_key
-  #      run: |
-  #         cosign public-key --key env://COSIGN_KEY > cosign.pub || { echo "Error: Public key creation failed"; exit 1; }
-  #      env:
-  #         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-  #         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+     # Step 11: Public Key Creation
+     - name: Public Key Creation
+       id: create_public_key
+       run: |
+          if cosign public-key --key ${{ secrets.COSIGN_KEY }} --passphrase ${{ secrets.COSIGN_PASSPHRASE }} > ${{ env.PUBLIC_KEY_FILE }}; then
+            echo "Success: Public key created successfully and saved to${{ env.PUBLIC_KEY_FILE }}."
+          else
+            echo "Error: Public key creation failed."
+            exit 1
+          f
         
-  #    # Step 12: Verify Docker Image Signature
-  #    - name: Verify Docker Image Signature
-  #      id: verify_image_signature
-  #      run: |
-  #         cosign verify --key cosign.pub ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} | jq . || { echo "Error: Verification of Docker image signature failed"; exit 1; }
+     # Step 13: Attach SBOM
+     # - name: Attach SBOM
+     #   id: attach_sbom
+     #   run: |
+     #      set -e
+     #      output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
+     #      echo "cat output --> showing output below"
+     #      echo "output: $output"
+     #      sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
+     #      if [ -z "$sbom_filename" ]; then
+     #        echo "Error: No SBOM filename found in the output"
+     #        exit 1
+     #      fi
+     #      echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
 
-  #    # Step 13: Attach SBOM
-  #    - name: Attach SBOM
-  #      id: attach_sbom
-  #      run: |
-  #         set -e
-  #         output=$(cosign attach sbom --sbom sbom.json ghcr.io/dheeman2912/spring-petclinic@${{ env.IMAGE_SHA }} 2>&1) || { echo "Error: Failed to run cosign attach sbom"; exit 1; }
-  #         echo "cat output --> showing output below"
-  #         echo "output: $output"
-  #         sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || { echo "Error: Failed to extract SBOM filename"; exit 1; }
-  #         if [ -z "$sbom_filename" ]; then
-  #           echo "Error: No SBOM filename found in the output"
-  #           exit 1
-  #         fi
-  #         echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+
+     - name: Attach SBOM with Application Docker Image
+       id: attach_sbom
+       run: |
+        set -e
+        echo "Attaching SBOM to the Docker image..."
+        output=$(cosign attach sbom --sbom sbom.json ${{ secrets.IMAGE_NAME }}@${{ steps.get_image_sha.outputs.image_sha }} 2>&1) || {
+          echo "Error: Failed to run cosign attach sbom."
+          echo "Output: $output"
+          exit 1
+        }
+    
+        echo "Success: SBOM attached successfully."
+        echo "Command output:"
+        echo "$output"
+    
+        # Extract SBOM filename from the output
+        sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
+          echo "Error: Failed to extract SBOM filename."
+          echo "Output: $output"
+          exit 1
+        }
+    
+        # Check if sbom_filename is empty
+        if [ -z "$sbom_filename" ]; then
+          echo "Error: No SBOM filename found in the output."
+          echo "Output: $output"
+          exit 1
+        fi
+    
+        echo "Success: SBOM filename extracted: $sbom_filename."
+    
+        # Extract the SHA from the SBOM filename
+        sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
+        echo "SBOM SHA: $sbom_sha"
+    
+        # Store the SBOM filename and SHA as environment variables for later use
+        echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+        echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
+
 
   #    # Step 14: Sign the SBOM attached with the Image
   #    - name: Sign the SBOM attached with the Image
