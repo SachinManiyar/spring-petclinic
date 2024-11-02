@@ -325,14 +325,14 @@ jobs:
        id: verify_sbom_signature
        run: |
           set -e
-          cosign verify --key cosign.pub ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME | jq . || { echo "Error: Verification of SBOM signature failed"; exit 1; }
+          cosign verify --key cosign.pub ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME | jq . && { echo "Success: Verification of SBOM signature succesfull"; } || { echo "Error: Verification of SBOM signature failed"; exit 1; }
 
      # Step 16: Directly attest SBOM with the Image
      - name: Directly attest SBOM with the Image
        id: attestt_sbom
        run: |
           set -e
-          output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes 2>&1) || { echo "Error: Failed to attest SBOM with the image"; exit 1; }
+          output=$(cosign attest --key env://COSIGN_KEY --predicate $SBOM_FILENAME ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes 2>&1) && { echo "Success: Attest SBOM with the image succesfull"; } || { echo "Error: Failed to attest SBOM with the image"; exit 1; }
           echo "output: $output"
        env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
@@ -343,14 +343,14 @@ jobs:
        id: verify_attested_image
        run: |
           set -e
-          output1=$(cosign verify-attestation --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq . 2>&1) || { echo "Error: Failed to verify the attested image"; exit 1; }
+          output1=$(cosign verify-attestation --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq . 2>&1) && { echo "Success: verify the attested image is  succesfull"; } || { echo "Error: Failed to verify the attested image"; exit 1; }
           echo "output: $output1"
 
      # Step 18: Sign SBOM
      - name: Sign SBOM
        id: sign_sbom_blob
        run: |
-          cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1 || { echo "Error: Signing SBOM failed"; exit 1; }
+          cosign sign-blob --yes --key env://COSIGN_KEY $SBOM_FILENAME --bundle cosign.bundle 2>&1 && { echo "Success: Signing SBOM is succesfull"; } || { echo "Error: Signing SBOM failed"; exit 1; }
        env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
@@ -358,7 +358,7 @@ jobs:
      - name: upload Signed SBOM to Github Registry
        run: |
           # set -e  # Exit on error
-          output2=$(cosign upload blob -f cosign.bundle ghcr.io/sachinmaniyar/${{ env.AppName }}:latest 2>&1) #| jq .) #|| { echo "Failed to upload the blob to the Registry"; exit 1; }
+          output2=$(cosign upload blob -f cosign.bundle  ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1) #| jq .) #|| { echo "Failed to upload the blob to the Registry"; exit 1; }
           echo "output: $output2"
           sbom_file=$(echo "$output2" | grep -oP 'sha256:[\w\d]{64}' | head -n 1) || { echo "Failed to extract SBOM filename"; exit 1; }
           echo "sbom_file: $sbom_file"
@@ -366,54 +366,55 @@ jobs:
      - name: Verify SBOM Uploaded to Image Repo
        run: |
           
-          cosign verify-blob sbom.json --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/sachinmaniyar/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
+          cosign verify-blob $SBOM_FILENAME  --bundle cosign.bundle --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/main --certificate-github-workflow-repository=https://github.com/dheeman2912/${{ env.AppName }} --certificate-github-workflow-trigger=push --key cosign.pub 2>&1 #| jq -r .payload | base64 --decode | jq .
        shell: bash
        env:
           COSIGN_KEY: ${{secrets.COSIGN_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSPHRASE}}
+          AppName: 'spring-petclinic'
 
-  #    # Step 19: Set Git safe directory
-  #    - name: Set Git Safe Directory
-  #      id: set_git_safe_directory
-  #      run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
+     # Step 19: Set Git safe directory
+     - name: Set Git Safe Directory
+       id: set_git_safe_directory
+       run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
 
-  #    # Step 20: Fetch Commit Details
-  #    - name: Fetch Commit Details
-  #      id: fetch_commit_details
-  #      run: |
-  #         # Get the commit ID
-  #         COMMIT_ID=$(git rev-parse HEAD)
-  #         # Get the branch name
-  #         BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-  #         # Get the author name and email
-  #         AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
-  #         AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
-  #         # Get the pull request number from GitHub context if it's a PR
-  #         if [ -n "${{ github.event.pull_request.number }}" ]; then
-  #           PR_NUMBER="${{ github.event.pull_request.number }}"
-  #         else
-  #           PR_NUMBER="Not applicable"
-  #         fi
-  #         # Get the GitHub repository URL
-  #         REPO_URL="https://github.com/${{ github.repository }}"
-  #         # Create JSON output
-  #         OUTPUT=$(jq -n \
-  #           --arg commit_id "$COMMIT_ID" \
-  #           --arg author_name "$AUTHOR_NAME" \
-  #           --arg author_email "$AUTHOR_EMAIL" \
-  #           --arg branch "$BRANCH_NAME" \
-  #           --arg uri "$REPO_URL" \
-  #           '{
-  #             commit_id: $commit_id,
-  #             author_name: $author_name,
-  #             author_email: $author_email,
-  #             branch: $branch,
-  #             uri: $uri
-  #           }')
-  #         # Save JSON output to a file
-  #         echo "$OUTPUT" > output.json
-  #         # Print the contents of the JSON file
-  #         cat output.json
+     # Step 20: Fetch Commit Details
+     - name: Fetch Commit Details
+       id: fetch_commit_details
+       run: |
+          # Get the commit ID
+          COMMIT_ID=$(git rev-parse HEAD)
+          # Get the branch name
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          # Get the author name and email
+          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
+          # Get the pull request number from GitHub context if it's a PR
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+          else
+            PR_NUMBER="Not applicable"
+          fi
+          # Get the GitHub repository URL
+          REPO_URL="https://github.com/${{ github.repository }}"
+          # Create JSON output
+          OUTPUT=$(jq -n \
+            --arg commit_id "$COMMIT_ID" \
+            --arg author_name "$AUTHOR_NAME" \
+            --arg author_email "$AUTHOR_EMAIL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg uri "$REPO_URL" \
+            '{
+              commit_id: $commit_id,
+              author_name: $author_name,
+              author_email: $author_email,
+              branch: $branch,
+              uri: $uri
+            }')
+          # Save JSON output to a file
+          echo "$OUTPUT" > output.json
+          # Print the contents of the JSON file
+          cat output.json
           
   #    # Step 21: Upload JSON file
   #    - name: Upload JSON file
