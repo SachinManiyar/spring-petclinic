@@ -253,15 +253,15 @@ jobs:
      - name: Public Key Creation
        id: create_public_key
        run: |
-        if cosign public-key --key env://COSIGN_KEY > cosign.pub 
-           echo "Success: Cosign Public Key Created successfully."
-          else
-            echo "Error: Cosign Public Key Creation failed."
-            exit 1
-          fi   
+        if cosign public-key --key env://COSIGN_KEY > cosign.pub; then
+          echo "Success: Cosign Public Key created successfully."
+        else
+          echo "Error: Cosign Public Key creation failed."
+          exit 1
+        fi   
        env:
-          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+        COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
         
      # Step 13: Attach SBOM
