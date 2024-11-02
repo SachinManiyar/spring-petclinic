@@ -172,7 +172,20 @@ jobs:
             exit 1
           fi
 
-     # Step 5: Log in to GitHub Container Registry
+     # Step 6: Scan Docker Image with Trivy and Upload the result
+     - name: Scan Application Docker Image with Trivy
+       id: scan_docker_image
+       run: |
+         trivy image ${{ secrets.IMAGE_NAME }}:{{ secrets.IMAGE_TAG }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
+
+     - name: Upload Trivy Scan Results
+       uses: actions/upload-artifact@v3
+       with:
+        name: trivy-scan-results
+        path: ${{ env.LOG_FILE }}
+
+       # Step 5: Log in to GitHub Container Registry
      - name: Log in to GitHub Container Registry
        id: login_registry
        uses: docker/login-action@v2
@@ -180,8 +193,28 @@ jobs:
           username: ${{ secrets.CR_Username }}
           password: ${{ secrets.CR_Password }}
           registry: ghcr.io
+          
 
-     # Step 9: Get SHA256 of the Pushed Docker Image
+
+     # Step 8:Push Docker Image to Github Container Registry
+     - name: Push Application Docker Image to GitHub Container Registry
+       id: push_docker_image
+       run: |
+          if docker push ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}; then
+            echo "Success: Docker image pushed successfully."
+          else
+            echo "Error: Pushing Docker image failed."
+            exit 1
+          fi
+      
+          if docker inspect ${{ secrets.IMAGE_NAME }}:${{ env.IMAGE_SHA }}; then
+            echo "Success: Docker image inspected successfully."
+          else
+            echo "Error: Inspecting Docker image failed."
+            exit 1
+          fi
+
+      # Step 9: Get SHA256 of the Pushed Docker Image
      - name: Get SHA256 ID of Application Docker Image
        id: get_image_sha
        run: |
@@ -191,39 +224,6 @@ jobs:
             exit 1
           fi
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
-          
-     # Step 6: Scan Docker Image with Trivy and Upload the result
-     - name: Scan Application Docker Image with Trivy
-       id: scan_docker_image
-       run: |
-         trivy image ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
-         echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
-
-     - name: Upload Trivy Scan Results
-       uses: actions/upload-artifact@v3
-       with:
-        name: trivy-scan-results
-        path: ${{ env.LOG_FILE }}
-
-
-     # Step 8:Push Docker Image to Github Container Registry
-     - name: Push Application Docker Image to GitHub Container Registry
-       id: push_docker_image
-       run: |
-          if docker push ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }}; then
-            echo "Success: Docker image pushed successfully."
-          else
-            echo "Error: Pushing Docker image failed."
-            exit 1
-          fi
-      
-          if docker inspect ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }}; then
-            echo "Success: Docker image inspected successfully."
-          else
-            echo "Error: Inspecting Docker image failed."
-            exit 1
-          fi
-
 
      # # Step 10: Sign Docker Image
      # - name: Sign Docker Image
