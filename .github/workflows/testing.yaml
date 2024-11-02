@@ -176,7 +176,8 @@ jobs:
      - name: Scan Application Docker Image with Trivy
        id: scan_docker_image
        run: |
-         trivy image ${{ secrets.IMAGE_NAME }}:{{ secrets.IMAGE_TAG }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         # trivy image ${{ secrets.IMAGE_NAME }}:{{ secrets.IMAGE_TAG }} > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
          echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
 
      - name: Upload Trivy Scan Results
