@@ -423,6 +423,20 @@ jobs:
        run: |
         cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
        shell: bash
+      # Step 6: Login to Azure
+     - name: Login to Azure
+       uses: azure/login@v1
+       with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          continue-on-error: true
+     - name: Check Azure Login Status
+       run: |
+         if [ $? -eq 0 ]; then
+          echo "Successfully logged in to Azure."
+         else
+          echo "Error: Azure login failed."
+          exit 1
+         fi
 
     # Step 8: Verify the AKS Cluster via Managed Identity
      - name: Verify the AKS Cluster via Managed Identity
