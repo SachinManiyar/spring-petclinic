@@ -41,7 +41,7 @@ jobs:
          docker run --rm \
            -v ${{ github.workspace }}:/workspace \
            -w /workspace \
-           ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
+           ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
            echo 'Running application inside container...';"
 
      - name: Get Git Details
