@@ -13,14 +13,13 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
+  IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}
   
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image: dheeman29/agent-image@sha256:${{ secrets.EXPECTED_SHA256 }}
-    outputs:
-      image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
+      image: dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} 
       
     permissions:
       security-events: write
