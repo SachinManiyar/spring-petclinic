@@ -71,16 +71,6 @@ jobs:
      #       -w /workspace \
      #       ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
      #       echo 'Running application inside container...';"
-
-     - name: Get Git Details
-       run: |
-         echo "Fetching Git repository details..."
-         echo "Repository URL: $GITHUB_REPOSITORY_URL"
-         echo "Branch: $GITHUB_REF"
-         echo "Commit ID: $(git rev-parse HEAD)"
-         echo "Author Name: $(git log -1 --pretty=format:'%an')"
-         echo "Checking for changes..."
-         git log -1 --stat
      
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
