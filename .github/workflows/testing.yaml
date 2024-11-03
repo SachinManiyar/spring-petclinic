@@ -482,7 +482,7 @@ jobs:
      - name: Post Deployment Health Check
        run: |
         echo "Checking the status of the deployed deployment..."
-        if kubectl rollout status deployment/deployment.yaml; then
+        if kubectl get deployment my-app; then
           echo "Deployment is ready."
         else
           echo "Error: Deployment is not ready."
@@ -490,7 +490,7 @@ jobs:
         fi
     
         echo "Checking the status of the service..."
-        if kubectl get svc service.yaml; then
+        if kubectl get svc my-app-service; then
           echo "Service is available."
         else
           echo "Error: Service is not available."
@@ -504,6 +504,7 @@ jobs:
         else
           echo "All pods are running successfully."
         fi
+
 
 
   #     - name: Download artifact
