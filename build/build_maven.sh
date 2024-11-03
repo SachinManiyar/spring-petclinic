@@ -10,6 +10,9 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
+echo "Checking contents of target directory..."
+ls target/
+
 # Use the build ID as part of the artifact name
 BUILD_ID=${GITHUB_RUN_ID:-local_build}  
 ARTIFACT_NAME="app-${BUILD_ID}.jar"
