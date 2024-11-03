@@ -89,11 +89,21 @@ jobs:
         
         echo "Tool installation completed successfully."
 
+      # Step 4: Build with Maven Wrapper
+     - name: Verify Maven Wrapper
+       run: |
+        ls -l ./mvnw
+
+     - name: List Files in Build Directory
+       run: |
+        ls -l ./build/
+
      # Step 3: Build with Maven Wrapper
      - name: Build with Maven Wrapper
        run: |
         echo "Starting Build with Maven Wrapper..."
         chmod +x ./build/build_maven.sh
+        set -x  # Enable script debugging
         ./build/build_maven.sh
         if [ $? -ne 0 ]; then
           echo "Error: Maven build process failed. Please check the logs."
