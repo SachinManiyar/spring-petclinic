@@ -469,9 +469,9 @@ jobs:
           RECIPIENTS: dheeman2912@gmail.com  # Comma-separated list of recipients
        run: |
           # Ensure the package list is up to date
-          sudo apt-get update
+          apt-get update
           # Install mailutils if it's not already installed
-          sudo apt-get install -y mailutils
+          apt-get install -y mailutils
       
           # Create a temporary file for the email content
           echo "Please find the attached artifact." > email_body.txt
