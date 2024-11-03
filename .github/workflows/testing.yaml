@@ -34,10 +34,10 @@ jobs:
 
      - name: Set up Docker
        run: |
-         echo "Logging into Gihub Container registry..."
-         echo "${{ secrets.CR_Username  }}" | docker login -u "${{ secrets.CR_Password }}" --password-stdin
+         echo "Logging into DockerHub..."
+         echo "${{ secrets.DOCKERHUB_USERNAME  }}" | docker login -u "${{ secrets.DOCKERHUB_PASSWORD }}" --password-stdin
 
-     - name: Run Node Application in Container
+     - name: Run Application in Container
        run: |
          docker run --rm \
            -v ${{ github.workspace }}:/workspace \
