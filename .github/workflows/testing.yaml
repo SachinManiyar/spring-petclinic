@@ -34,8 +34,9 @@ jobs:
 
      - name: Set up Docker
        run: |
-         echo "Logging into DockerHub..."
-         echo "${{ secrets.DOCKERHUB_USERNAME  }}" | docker login -u "${{ secrets.DOCKERHUB_PASSWORD }}" --password-stdin
+        echo "Logging into DockerHub..."
+        echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
 
      - name: Run Application in Container
        run: |
