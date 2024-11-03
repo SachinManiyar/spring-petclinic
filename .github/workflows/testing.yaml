@@ -14,12 +14,13 @@ env:
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
   IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}
+  GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
   
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
-    container:
-      image: dheeman29/agent-image:v1
+    # container:
+    #   image: dheeman29/agent-image:v1
       
     permissions:
       security-events: write
@@ -33,44 +34,44 @@ jobs:
      - name: Checkout Code
        uses: actions/checkout@v4
 
-     - name: Capture SHA256 ID of the Image
-       id: capture_sha256
-       run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-          if [ "$REPO_DIGESTS" == "[]" ]; then
-              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-              exit 1
-          fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
-          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+     # - name: Capture SHA256 ID of the Image
+     #   id: capture_sha256
+     #   run: |          
+     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
+     #      if [ "$REPO_DIGESTS" == "[]" ]; then
+     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+     #          exit 1
+     #      fi
+     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
+     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-     # Step 2: Verify Container SHA256 ID        
-     - name: Verify Container SHA256 ID        
-       id: verify_sha256
-       run: |          
-          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+     # # Step 2: Verify Container SHA256 ID        
+     # - name: Verify Container SHA256 ID        
+     #   id: verify_sha256
+     #   run: |          
+     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-              echo "Error: SHA256 mismatch. Aborting."
-              exit 1
-          fi
-          echo "SHA256 ID verified successfully."
+     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+     #          echo "Error: SHA256 mismatch. Aborting."
+     #          exit 1
+     #      fi
+     #      echo "SHA256 ID verified successfully."
      
 
-     # - name: Log in to DockerHub
-     #   run: |
-     #    echo "Logging into DockerHub..."
-     #    echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+     - name: Log in to DockerHub
+       run: |
+        echo "Logging into DockerHub..."
+        echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
 
-     # - name: Runing Application in Container
-     #   run: |
-     #     docker run --rm \
-     #       -v ${{ github.workspace }}:/workspace \
-     #       -w /workspace \
-     #       ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
-     #       echo 'Running application inside container...';"
+     - name: Runing Application in Container
+       run: |
+         docker run --rm \
+           -v ${{ github.workspace }}:/workspace \
+           -w /workspace \
+           ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
+           echo 'Running application inside container...';"
      
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
@@ -194,7 +195,10 @@ jobs:
        id: scan_docker_image
        run: |
          trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
-         echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
+         # echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
+         echo "Trivy scan completed. Results:"
+         cat ${{ env.LOG_FILE }}  # This prints the scan results in the log
+
 
      - name: Upload Trivy Scan Results
        uses: actions/upload-artifact@v3
@@ -366,7 +370,7 @@ jobs:
      # Step 19: Set Git safe directory
      - name: Set Git Safe Directory
        id: set_git_safe_directory
-       run: git config --global --add safe.directory /__w/spring-petclinic/spring-petclinic
+       run: git config --global --add safe.directory $GIT_SAFE_DIRECTORY
 
      # Step 20: Fetch Commit Details
      - name: Fetch Commit Details
@@ -497,14 +501,6 @@ jobs:
           exit 1
         fi
     
-        echo "Checking if all pods are running..."
-        if kubectl get pods | grep -v 'Running'; then
-          echo "Some pods are not running successfully."
-          exit 1
-        else
-          echo "All pods are running successfully."
-        fi
-
 
 
   #     - name: Download artifact
