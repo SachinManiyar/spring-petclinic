@@ -353,7 +353,7 @@ jobs:
           # Fetch the SBOM SHA from cosign bundle (assuming the SBOM SHA is stored or signed)
           SBOM_SHA=$(cosign upload blob -f cosign.bundle ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1 | grep -oP 'sha256:[\w\d]{64}' | head -n 1)
           #Create SBOM link
-          SBOM_LINK="https://github.com/dheeman29/spring-petclinic/raw/main/sbom.json"
+          SBOM_LINK="https://github.com/dheeman29/spring-petclinic/raw/test/sbom.json"
           # Create JSON output
           OUTPUT=$(jq -n \
             --arg commit_id "$COMMIT_ID" \
@@ -363,8 +363,8 @@ jobs:
             --arg uri "$REPO_URL" \
             '{
               commit_id: $commit_id,
-              author_name: $author_name,
-              author_email: $author_email,
+              git_author_name: $author_name,
+              git_author_email: $author_email,
               branch: $branch,
               uri: $uri
             }')
@@ -457,21 +457,25 @@ jobs:
     
 
 
-  #     - name: Download artifact
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: trivy-scan-results
- 
-  #     - name: Send email with artifact
-  #       env:
-  #         EMAIL_USER: ${{ secrets.EMAIL_USER }}      # Your email
-  #         EMAIL_PASS: ${{ secrets.EMAIL_PASS }}      # Your email password or API key
-  #         RECIPIENTS: dheeman.das@pwc.com,saurav.d.kumar@pwc.com  # Comma-separated list of recipients
-  #       run: |
-  #         # Install mailx or use a similar tool
-  #         apt-get install -y mailutils
-  #         # Create a temporary file for the email content
-  #         echo "Please find the attached artifact." > email_body.txt
-  #         # Send email with attachment
-  #         echo "Sending email..."
-  #         echo "Subject: Artifacts from GitHub Actions" | cat - email_body.txt | mail -a output/artifact.txt -s "Artifacts from CI" $RECIPIENTS
+     - name: Download artifact
+       uses: actions/download-artifact@v3
+       with:
+         name: trivy-scan-results
+
+     - name: Send email with artifact
+       env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}      # Your email
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}      # Your email password or API key
+          RECIPIENTS: dheeman2912@gmail.com  # Comma-separated list of recipients
+       run: |
+          # Ensure the package list is up to date
+          sudo apt-get update
+          # Install mailutils if it's not already installed
+          sudo apt-get install -y mailutils
+      
+          # Create a temporary file for the email content
+          echo "Please find the attached artifact." > email_body.txt
+      
+          # Send email with attachment
+          echo "Sending email..."
+          echo "Subject: Artifacts from GitHub Actions" | cat - email_body.txt | mail -s "Artifacts from CI" -a trivy-scan-results/artifact.txt $RECIPIENTS
