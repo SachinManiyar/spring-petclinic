@@ -1,3 +1,36 @@
+# name: DevSecOps Pipeline
+
+# on:
+#   push:
+#     branches:
+#       - test
+#   workflow_dispatch:
+
+# env:
+#   SBOM_FILE: sbom.json
+#   SOURCE_DIR: .  
+#   OUTPUT_FORMAT: cyclonedx-json
+#   OWNER: ${{ secrets.OWNER_NAME }} 
+#   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
+#   LOG_FILE: "trivy_scan_results.log"
+#   IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}
+#   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
+  
+# jobs:
+   
+#   build-and-scan:
+#     runs-on: ubuntu-22.04
+#     container:
+#       image: dheeman29/agent-image:v1
+      
+#     permissions:
+#       security-events: write
+#       id-token: write
+#       contents: read
+#       attestations: write
+#       packages: write
+
+
 name: DevSecOps Pipeline
 
 on:
@@ -13,22 +46,32 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
-  IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}
+  IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}  # SHA ID from secrets
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
   
 jobs:
-  build-and-scan:
+  set-image:
     runs-on: ubuntu-22.04
-    # container:
-    #   image: dheeman29/agent-image:v1
-      
+    outputs:
+      container_image: ${{ secrets.CONTAINER_IMAGE }}  # Base repository
+
+    steps:
+      - name: Set container image
+        run: echo "CONTAINER_IMAGE=${{ secrets.CONTAINER_IMAGE }}@sha256:${{ env.IMAGE_SHA256 }}" >> $GITHUB_ENV
+
+  build-and-scan:
+    needs: set-image
+    runs-on: ubuntu-22.04
+    container:
+      image: ${{ env.CONTAINER_IMAGE }}  # Reference the image from the first job
+
     permissions:
       security-events: write
       id-token: write
       contents: read
       attestations: write
       packages: write
-
+      
     steps:
      
      - name: Checkout Code
@@ -59,19 +102,19 @@ jobs:
      #      echo "SHA256 ID verified successfully."
      
 
-     - name: Log in to DockerHub
-       run: |
-        echo "Logging into DockerHub..."
-        echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+     # - name: Log in to DockerHub
+     #   run: |
+     #    echo "Logging into DockerHub..."
+     #    echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
 
-     - name: Runing Application in Container
-       run: |
-         docker run --rm \
-           -v ${{ github.workspace }}:/workspace \
-           -w /workspace \
-           ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
-           echo 'Running application inside container...';"
+     # - name: Runing Application in Container
+     #   run: |
+     #     docker run --rm \
+     #       -v ${{ github.workspace }}:/workspace \
+     #       -w /workspace \
+     #       ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGEE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
+     #       echo 'Running application inside container...';"
      
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
@@ -88,15 +131,6 @@ jobs:
         }
         
         echo "Tool installation completed successfully."
-
-      # Step 4: Build with Maven Wrapper
-     - name: Verify Maven Wrapper
-       run: |
-        ls -l ./mvnw
-
-     - name: List Files in Build Directory
-       run: |
-        ls -l ./build/
 
      # Step 3: Build with Maven Wrapper
      - name: Build with Maven Wrapper
