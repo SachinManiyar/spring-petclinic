@@ -18,7 +18,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image: dheeman29/agent-image:v1
+      image: dheeman29/agent-image@sha256:${{ secrets.EXPECTED_SHA256 }}
     outputs:
       image_sha: ${{ steps.get_image_sha.outputs.image_sha }}
       
@@ -33,30 +33,30 @@ jobs:
      - name: Checkout Code
        uses: actions/checkout@v4
 
-     # Step 1: Capture SHA256 ID of the Image
-     - name: Capture SHA256 ID of the Image
-       id: capture_sha256
-       run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-          if [ "$REPO_DIGESTS" == "[]" ]; then
-              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-              exit 1
-          fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
-          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+     # # Step 1: Capture SHA256 ID of the Image
+     # - name: Capture SHA256 ID of the Image
+     #   id: capture_sha256
+     #   run: |          
+     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
+     #      if [ "$REPO_DIGESTS" == "[]" ]; then
+     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+     #          exit 1
+     #      fi
+     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
+     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
 
-     # Step 2: Verify Container SHA256 ID        
-     - name: Verify Container SHA256 ID        
-       id: verify_sha256
-       run: |          
-          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+     # # Step 2: Verify Container SHA256 ID        
+     # - name: Verify Container SHA256 ID        
+     #   id: verify_sha256
+     #   run: |          
+     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-              echo "Error: SHA256 mismatch. Aborting."
-              exit 1
-          fi
-          echo "SHA256 ID verified successfully."
+     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+     #          echo "Error: SHA256 mismatch. Aborting."
+     #          exit 1
+     #      fi
+     #      echo "SHA256 ID verified successfully."
      
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
@@ -417,104 +417,46 @@ jobs:
         cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
        shell: bash
 
-  # Deploy_To_Aks:
-  #   runs-on: ubuntu-22.04
-  #   container:
-  #     image: dheeman29/agent-image:v1
-  #   needs: Attest_Verify_Predicate
-  #   steps:
-  #     # Step 1: Capture SHA256 ID of the Image
-  #     - name: Capture SHA256 ID of the Image
-  #       run: |          
-  #         REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-  #         if [ "$REPO_DIGESTS" == "[]" ]; then
-  #           echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-  #           exit 1
-  #         fi
-  #         CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1| sed 's/.*@sha256://')
-  #         echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
-
-  #     # Step 2: Verify Container SHA256 ID        
-  #     - name: Verify Container SHA256 ID        
-  #       run: |          
-  #         EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-  #         ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
-          
-  #         if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-  #           echo "SHA256 mismatch. Aborting."
-  #           exit 1
-  #         fi
-  #         echo "SHA256 ID verified successfully."
-
-  #     # Step 4: Checkout the code
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
-  #     # Step 5: Install Tools   
-  #     - name: Install Tools
-  #       id: install_tools
-  #       run: |
-  #         chmod +x ./install_dependencies/install_tools.sh
-  #         ./install_dependencies/install_tools.sh || { echo "Error: Tool installation failed"; exit 1; }
-
-  #     # Step 6: Login to Azure
-  #     - name: Login to Azure
-  #       uses: azure/login@v1
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
-  #         continue-on-error: true
-  #     - name: Check Azure Login Status
-  #       run: |
-  #        if [ $? -eq 0 ]; then
-  #         echo "Successfully logged in to Azure."
-  #        else
-  #         echo "Error: Azure login failed."
-  #         exit 1
-  #        fi
-
-  #   # Step 7: Set up kubeconfig for AKS access
-  #     - name: Set up kubeconfig for AKS access
-  #       run: |
-  #        mkdir -p ~/.kube
-  #        echo "${{ secrets.KUBECONFIG_FILE }}" | base64 -d > ~/.kube/config
-  #        chmod 600 ~/.kube/config
-  #        if ! kubectl version --client; then
-  #         echo "Error: kubectl not found or not configured correctly"
-  #         exit 1
-  #        fi
-  #        echo "Kubeconfig set up successfully."
-
-  #   # Step 8: Verify the AKS Cluster via Managed Identity
-  #     - name: Verify the AKS Cluster via Managed Identity
-  #       run: |
-  #        CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv) || { echo "Failed to fetch Managed Identity"; exit 1; }
+    # Step 8: Verify the AKS Cluster via Managed Identity
+     - name: Verify the AKS Cluster via Managed Identity
+       run: |
+         CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv) || { echo "Failed to fetch Managed Identity"; exit 1; }
         
-  #        EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
+         EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
         
-  #        if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
-  #         echo "Error: Managed Identity does not match. Aborting deployment."
-  #         exit 1
-  #        else
-  #         echo "Managed Identity verified successfully."
-  #        fi
+         if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
+          echo "Error: Managed Identity does not match. Aborting deployment."
+          exit 1
+         else
+          echo "Managed Identity verified successfully."
+         fi
+
+   # Step 7: Download kubeconfig file
+     - name: Download kubeconfig file
+       run: |
+          if az aks get-credentials --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --admin --overwrite-existing; then
+            echo "Kubeconfig downloaded successfully."
+          else
+            echo "Error: Failed to download kubeconfig file."
+            exit 1
+          fi
 
 
-  #   # Step 10: Deploy to AKS
-  #     - name: Deploy to AKS
-  #       run: |
-  #        if kubectl apply -f K8s/deployment.yaml; then
-  #         echo "Deployment applied successfully."
-  #        else
-  #         echo "Error deploying application."
-  #         exit 1
-  #        fi
-  #        if kubectl apply -f K8s/service.yaml; then
-  #         echo "Service applied successfully."
-  #        else
-  #         echo "Error deploying service."
-  #         exit 1
-  #        fi
+    # Step 10: Deploy to AKS
+     - name: Deploy to AKS
+       run: |
+         if kubectl apply -f K8s/deployment.yaml; then
+          echo "Deployment applied successfully."
+         else
+          echo "Error deploying application."
+          exit 1
+         fi
+         if kubectl apply -f K8s/service.yaml; then
+          echo "Service applied successfully."
+         else
+          echo "Error deploying service."
+          exit 1
+         fi
 
 
   #     - name: Download artifact
