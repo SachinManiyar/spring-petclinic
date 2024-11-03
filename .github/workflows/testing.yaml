@@ -18,8 +18,8 @@ env:
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
-    container:
-      image: dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} 
+    # container:
+    #   image: dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} 
       
     permissions:
       security-events: write
@@ -31,6 +31,29 @@ jobs:
     steps:
      - name: Checkout Code
        uses: actions/checkout@v4
+
+     - name: Set up Docker
+       run: |
+         echo "Logging into Gihub Container registry..."
+         echo "${{ secrets.CR_Username  }}" | docker login -u "${{ secrets.CR_Password }}" --password-stdin
+
+     - name: Run Node Application in Container
+       run: |
+         docker run --rm \
+           -v ${{ github.workspace }}:/workspace \
+           -w /workspace \
+           dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} bash -c "
+           echo 'Running application inside container...';"
+
+     - name: Get Git Details
+       run: |
+         echo "Fetching Git repository details..."
+         echo "Repository URL: $GITHUB_REPOSITORY_URL"
+         echo "Branch: $GITHUB_REF"
+         echo "Commit ID: $(git rev-parse HEAD)"
+         echo "Author Name: $(git log -1 --pretty=format:'%an')"
+         echo "Checking for changes..."
+         git log -1 --stat
 
      # # Step 1: Capture SHA256 ID of the Image
      # - name: Capture SHA256 ID of the Image
@@ -88,13 +111,6 @@ jobs:
         # Display the logs
         echo "Build logs:"
         cat build.log
-
-
-  #     # Step 4: Generate artifact attestation
-  #    - name: Generate artifact attestation
-  #      uses: actions/attest-build-provenance@v1
-  #      with:
-  #         subject-path: ./app.jar
 
       # Step 6: Generate SBOM with Syft
      - name: Generate SBOM with Syft
