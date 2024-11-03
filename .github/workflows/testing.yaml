@@ -18,8 +18,6 @@ env:
 jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
-    # container:
-    #   image: dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} 
       
     permissions:
       security-events: write
@@ -32,18 +30,18 @@ jobs:
      - name: Checkout Code
        uses: actions/checkout@v4
 
-     - name: Set up Docker
+     - name: Log in to DockerHub
        run: |
         echo "Logging into DockerHub..."
         echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
 
-     - name: Run Application in Container
+     - name: Runing Application in Container
        run: |
          docker run --rm \
            -v ${{ github.workspace }}:/workspace \
            -w /workspace \
-           dheeman29/agent-image@sha256:${{ env.IMAGE_SHA256 }} bash -c "
+           ${{ secrets.CONTAINER_IMAGE_REGISTRY }}/${{ secrets.CONTAINER_IMAGE_NAME }}@sha256:${{ env.IMAGE_SHA256 }} bash -c "
            echo 'Running application inside container...';"
 
      - name: Get Git Details
@@ -55,31 +53,6 @@ jobs:
          echo "Author Name: $(git log -1 --pretty=format:'%an')"
          echo "Checking for changes..."
          git log -1 --stat
-
-     # # Step 1: Capture SHA256 ID of the Image
-     # - name: Capture SHA256 ID of the Image
-     #   id: capture_sha256
-     #   run: |          
-     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-     #      if [ "$REPO_DIGESTS" == "[]" ]; then
-     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-     #          exit 1
-     #      fi
-     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
-     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
-
-     # # Step 2: Verify Container SHA256 ID        
-     # - name: Verify Container SHA256 ID        
-     #   id: verify_sha256
-     #   run: |          
-     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
-          
-     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-     #          echo "Error: SHA256 mismatch. Aborting."
-     #          exit 1
-     #      fi
-     #      echo "SHA256 ID verified successfully."
      
      # Step 3: Install Necessary Tools and Dependencies
      - name: Install Necessary Tools and Dependencies
