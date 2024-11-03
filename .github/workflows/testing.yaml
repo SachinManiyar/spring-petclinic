@@ -63,7 +63,7 @@ jobs:
     needs: set-image
     runs-on: ubuntu-22.04
     container:
-      image: ${{ env.CONTAINER_IMAGE }}  # Reference the image from the first job
+      image: ${{ needs.set-image.outputs.container_image }}  # Reference the image from the first job
 
     permissions:
       security-events: write
