@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the build command
-build_command="./mvnw clean spring-boot:build-image -Dmaven.test.skip=true"
+build_command=docker build -t ghcr.io/dheeman2912/spring-petclinic:1.1 .
 
 # Run the Maven build and handle errors
 echo "Building Docker image using Maven..."
