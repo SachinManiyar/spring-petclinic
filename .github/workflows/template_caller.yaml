@@ -3,7 +3,7 @@ name: Call Template Workfloww
 on:
   push:
     branches:
-      - main
+      - test
  
 jobs:
   call-template:
