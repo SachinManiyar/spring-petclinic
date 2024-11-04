@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the build command
-build_command=docker build -t ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION}} .
+build_command=docker build -t ghcr.io/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION}} .
 
 # Run the Maven build and handle errors
 echo "Building Docker image using Maven..."
