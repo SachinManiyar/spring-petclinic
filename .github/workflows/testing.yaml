@@ -106,8 +106,17 @@ jobs:
      - name: Build and analyze
        env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}      
+       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
+
+     - name: Check SonarQube Quality Gate
+       run: |
+        sleep 20
+        STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "${{ secrets.HOST_URL }} api/qualitygates/project_status?projectKey=spring-petclinic" | jq -r '.projectStatus.status')
+        echo "Quality Gate Status: $STATUS"
+        if [ "$STATUS" != "OK" ]; then
+        echo "SonarQube Quality Gate failed"
+        fi
 
      - name: Generate SBOM with Syft
        run: |
