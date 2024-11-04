@@ -1,0 +1,12 @@
+name: Call Template Workflow
+ 
+on:
+  push:
+    branches:
+      - main
+ 
+jobs:
+  call-template:
+    uses: dheeman2912/Template-Repo/.github/template1.yaml@main
+    with:
+      example_input: 'Hello from my-project!'
