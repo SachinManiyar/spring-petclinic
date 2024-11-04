@@ -8,6 +8,6 @@ on:
  
 jobs:
   call-template:
-    uses: dheeman2912/Template-Repo/.github/template1.yaml@main
+    uses: DHEEMAN2912/Template-Repo/.github/template1.yaml@main
     with:
       example_input: 'Hello from my-project!'
