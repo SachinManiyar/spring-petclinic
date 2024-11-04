@@ -1,4 +1,4 @@
-name: Call Template Workfloww
+name: Call Template Workflow
  
 on:
   push:
