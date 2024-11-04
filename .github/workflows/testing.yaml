@@ -15,7 +15,8 @@ env:
   LOG_FILE: "trivy_scan_results.log"
   IMAGE_SHA256: ${{ secrets.IMAGE_NAME_WITH_SHA}}
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
-  
+  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}  # GitHub secret
+  IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  
   
 jobs:
    
