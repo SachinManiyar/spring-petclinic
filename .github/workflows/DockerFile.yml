@@ -26,7 +26,7 @@ jobs:
         
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/spring-petclinic:11.0 .
+          docker build -t ghcr.io/sachinmaniyar/spring-petclinic:11.0 .
         
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
