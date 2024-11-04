@@ -22,8 +22,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      # image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
-      image: ${{ env.IMAGE_SHA256 }}
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
       
     permissions:
       security-events: write
