@@ -4,7 +4,7 @@
 exec &> build.log
 
 echo "Starting Maven build..."
-mvn clean package -DskipTests
+mvn clean package
 if [ $? -ne 0 ]; then
    echo "Error: Maven build failed"
    exit 1
