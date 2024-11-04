@@ -13,8 +13,9 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
-  IMAGE_SHA256: ${{ secrets.EXPECTED_SHA256 }}
+  IMAGE_SHA256: ${{ secrets.IMAGE_NAME_WITH_SHA}}
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
+  
   
 jobs:
    
@@ -22,7 +23,7 @@ jobs:
     runs-on: ubuntu-22.04
     container:
       # image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
-      image:  ${{ secrets.IMAGE_NAME_WITH_SHA }}
+      image: ${{ env.IMAGE_SHA256 }}
       
     permissions:
       security-events: write
