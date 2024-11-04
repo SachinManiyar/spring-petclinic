@@ -21,7 +21,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-22.04
     container:
-      image: dheeman29/agent-image:v1
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
       
     permissions:
       security-events: write
@@ -35,28 +35,28 @@ jobs:
      - name: Checkout Code
        uses: actions/checkout@v4
 
-     - name: Capture SHA256 ID of the Image
-       id: capture_sha256
-       run: |          
-          REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-          if [ "$REPO_DIGESTS" == "[]" ]; then
-              echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-              exit 1
-          fi
-          CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
-          echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
+     # - name: Capture SHA256 ID of the Image
+     #   id: capture_sha256
+     #   run: |          
+     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
+     #      if [ "$REPO_DIGESTS" == "[]" ]; then
+     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
+     #          exit 1
+     #      fi
+     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
+     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
      
-     - name: Verify Container SHA256 ID        
-       id: verify_sha256
-       run: |          
-          EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-          ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
+     # - name: Verify Container SHA256 ID        
+     #   id: verify_sha256
+     #   run: |          
+     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
+     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
           
-          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-              echo "Error: SHA256 mismatch. Aborting."
-              exit 1
-          fi
-          echo "SHA256 ID verified successfully."
+     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+     #          echo "Error: SHA256 mismatch. Aborting."
+     #          exit 1
+     #      fi
+     #      echo "SHA256 ID verified successfully."
    
      - name: Install Necessary Tools and Dependencies
        id: install_tools_and_dependencies
