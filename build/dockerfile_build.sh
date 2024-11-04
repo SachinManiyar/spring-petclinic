@@ -5,9 +5,9 @@ build_command=docker build -t ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSIO
 
 # Run the Maven build and handle errors
 echo "Building Docker image using Maven..."
-if $build_command; then
+if eval $build_command; then
     echo "Docker image build completed successfully."
 else
-    echo "Error: Docker image build failed"
+    echo "Error: Docker image build failed."
     exit 1
 fi
