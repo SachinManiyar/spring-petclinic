@@ -90,6 +90,25 @@ jobs:
         echo "Build logs:"
         cat build.log
 
+  
+     - name: Cache SonarQube packages
+       uses: actions/cache@v4
+       with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+     - name: Cache Maven packages
+       uses: actions/cache@v4
+       with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+     - name: Build and analyze
+       env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
+
      - name: Generate SBOM with Syft
        run: |
           echo "Starting SBOM generation with Syft..."
@@ -179,21 +198,6 @@ jobs:
        with:
         name: trivy-scan-results
         path: ${{ env.LOG_FILE }}
-
-     - name: Tag Docker Image
-       id: tag_docker_image
-       run: |
-        # Define variables from secrets
-        IMAGE_TAG="${{ secrets.IMAGE_TAG }}"          
-        IMAGE_NAME="${{ secrets.IMAGE_NAME }}"       
-        IMAGE_VERSION="${{ secrets.IMAGE_VERSION }}" 
-    
-        if docker tag "$IMAGE_TAG" "$IMAGE_NAME:$IMAGE_VERSION"; then
-          echo "Success: Docker image tagged successfully."
-        else
-          echo "Error: Tagging Docker image failed."
-          exit 1
-        fi  
          
      - name: Push Application Docker Image to GitHub Container Registry
        id: push_docker_image
