@@ -370,7 +370,41 @@ jobs:
           # Save JSON output to a file
           echo "$OUTPUT" > output.json
           # Print the contents of the JSON file
-          cat output.json  
+          cat output.json 
+          
+     - name: SBOM_Upload
+       run: |
+        chmod +x ./build/sbom_upload.sh
+        set -x  # Enable script debugging
+        ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+        if [ $? -ne 0 ]; then
+          echo "Error: SBOM_Upload failed."
+          exit 1
+        else
+          echo "SBOM_Upload completed successfully."
+        fi
+
+
+     # - name: Run the shell script
+     #   run: ./project_creation_sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+ 
+  
+     - name: vulnerability_score_check
+       run: |
+          chmod +x ./build/Vunerability_score.sh
+          set -x  # Enable script debugging
+          ./build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
+          if [ $? -ne 0 ]; then
+            echo "Error: vulnerability_score_check failed."
+            exit 1
+          else
+            echo "vulnerability_score_check completed successfully."
+          fi
+         
+          
+
+     # - name: Run the shell script
+     #   run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }} 
 
      - name: Attest Image using Predicate
        run: |
