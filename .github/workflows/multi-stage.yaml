@@ -125,6 +125,30 @@ jobs:
           exit 1
         fi
 
+     - name: SBOM_Upload_for_Dependency_Tracker
+       run: |
+        chmod +x ./build/sbom_upload.sh
+        set -x  # Enable script debugging
+        ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+        if [ $? -ne 0 ]; then
+          echo "Error: SBOM_Upload_for_Dependency_Tracker failed."
+          exit 1
+        else
+          echo "SBOM_Upload_for_Dependency_Tracker completed successfully."
+        fi
+
+     - name: Vulnerability_Score_Check
+       run: |
+        chmod +x ./build/Vunerability_score.sh
+        set -x  # Enable script debugging
+        ./build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+        if [ $? -ne 0 ]; then
+          echo "Error: Vulnerability_Score_Check failed."
+          exit 1
+        else
+          echo "Vulnerability_Score_Check completed successfully."
+        fi
+
   Image-Build:
     needs: build
     runs-on: ubuntu-22.04
@@ -373,20 +397,7 @@ jobs:
        uses: actions/upload-artifact@v3
        with:
           name: git-details
-          path: output.json
-          
-     - name: SBOM_Upload_for_Dependency_Tracker
-       run: |
-        chmod +x ./build/sbom_upload.sh
-        set -x  # Enable script debugging
-        ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
-        if [ $? -ne 0 ]; then
-          echo "Error: SBOM_Upload_for_Dependency_Tracker failed."
-          exit 1
-        else
-          echo "SBOM_Upload_for_Dependency_Tracker completed successfully."
-        fi
-         
+          path: output.json   
 
      - name: Attest Image using Predicate
        run: |
