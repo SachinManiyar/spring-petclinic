@@ -347,11 +347,6 @@ jobs:
        env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-
-     # - name: Verify Predicate Attestation
-     #   run: |
-     #    cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
-     #   shell: bash
      
      - name: Login to Azure
        uses: azure/login@v1
