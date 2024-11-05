@@ -489,18 +489,4 @@ jobs:
           exit 1
         fi
 
-     - name: HTTP status check on the service
-       id: http_status_check 
-       run: |
-            echo "Performing HTTP status check on the service"
-            HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://4.188.109.151:8080)
-            echo "HTTP Status: $HTTP_STATUS"
-            echo "$HTTP_STATUS" > http_status.txt
-            
-     - name: Delete Deployment and Service if Health Check Fails
-       if: steps.http_status_check.outputs.status != '200' 
-       run: |
-          echo "Deleting the deployment and service due to failed health check..."
-          kubectl delete deployment my-appp || echo "Deployment already deleted"
-          kubectl delete svc my-app-service || echo "Service already deleted"
-
+   
