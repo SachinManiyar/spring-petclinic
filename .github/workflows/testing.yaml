@@ -116,14 +116,14 @@ jobs:
      #    name: sbom
      #    path: ${{ env.SBOM_FILE }}
 
-     - name: Check SBOM Upload Status
-       run: |
-        if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
-          echo "SBOM file uploaded successfully."
-        else
-          echo "Error: Failed to upload SBOM file."
-          exit 1
-        fi
+     # - name: Check SBOM Upload Status
+     #   run: |
+     #    if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
+     #      echo "SBOM file uploaded successfully."
+     #    else
+     #      echo "Error: Failed to upload SBOM file."
+     #      exit 1
+     #    fi
 
      - name: Build Application Docker Image using Maven
        run: |
