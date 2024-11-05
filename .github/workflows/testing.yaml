@@ -272,7 +272,7 @@ jobs:
         echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
 
 
-     - name: Sign the SBOM attached with the Image
+     - name: Signing image
        id: sign_sbom
        run: |
           set -e
@@ -287,7 +287,7 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Verify Sign of SBOM attached with the Image
+     - name: Verifying sign of image
        id: verify_sbom_signature
        run: |
           set -e
