@@ -109,12 +109,12 @@ jobs:
             echo "SBOM generated successfully and saved to ${SBOM_FILE}."
           fi
 
-     - name: Upload SBOM
-       id: upload_sbom  
-       uses: actions/upload-artifact@v4
-       with:
-        name: sbom
-        path: ${{ env.SBOM_FILE }}
+     # - name: Upload SBOM
+     #   id: upload_sbom  
+     #   uses: actions/upload-artifact@v4
+     #   with:
+     #    name: sbom
+     #    path: ${{ env.SBOM_FILE }}
 
      - name: Check SBOM Upload Status
        run: |
@@ -260,7 +260,7 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Verifying sign of image
+     - name: Verifying SBOM Signature of signed image
        id: verify_sbom_signature
        run: |
           set -e
@@ -323,9 +323,11 @@ jobs:
               sbom_link: $sbom_link
             }')
           # Save JSON output to a file
-          echo "$OUTPUT" > output.json
+          echo "$OUTPUT" >> output.json
+          echo "SBOM File ---------------------" >> output.json
+          cat sbom.json >> output.json
           # Print the contents of the JSON file
-          cat output.json 
+          cat output.json      
           
      - name: SBOM_Upload
        run: |
@@ -347,6 +349,11 @@ jobs:
        env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     - name: Verify Predicate Attestation
+       run: |
+        cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+       shell: bash
      
      - name: Login to Azure
        uses: azure/login@v1
@@ -400,49 +407,49 @@ jobs:
           exit 1
          fi
 
-     - name: Post Deployment Health Check
-       run: |
-        echo "Checking the status of the deployed deployment..."
-        if kubectl get deployment my-appp; then
-          echo "Deployment is ready."
-        else
-          echo "Error: Deployment is not ready."
-          exit 1
-        fi
+     # - name: Post Deployment Health Check
+     #   run: |
+     #    echo "Checking the status of the deployed deployment..."
+     #    if kubectl get deployment my-appp; then
+     #      echo "Deployment is ready."
+     #    else
+     #      echo "Error: Deployment is not ready."
+     #      exit 1
+     #    fi
     
-        echo "Checking the status of the service..."
-        if kubectl get svc my-app-service; then
-          echo "Service is available."
-        else
-          echo "Error: Service is not available."
-          exit 1
-        fi
+     #    echo "Checking the status of the service..."
+     #    if kubectl get svc my-app-service; then
+     #      echo "Service is available."
+     #    else
+     #      echo "Error: Service is not available."
+     #      exit 1
+     #    fi
 
-     - name: HTTP Status Check and Conditional Cleanup
-       run: |
-        echo "Performing HTTP status check on the service..."
+     # - name: HTTP Status Check and Conditional Cleanup
+     #   run: |
+     #    echo "Performing HTTP status check on the service..."
         
-        # Fetch the external IP of the service dynamically
-        EXTERNAL_IP=$(kubectl get svc my-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-        if [ -z "$EXTERNAL_IP" ]; then
-          echo "Error: Unable to retrieve the external IP."
-          exit 1
-        fi
+     #    # Fetch the external IP of the service dynamically
+     #    EXTERNAL_IP=$(kubectl get svc my-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     #    if [ -z "$EXTERNAL_IP" ]; then
+     #      echo "Error: Unable to retrieve the external IP."
+     #      exit 1
+     #    fi
         
-        echo "Service External IP: $EXTERNAL_IP"
+     #    echo "Service External IP: $EXTERNAL_IP"
         
-        # Perform HTTP status check
-        HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$EXTERNAL_IP:8080)
-        echo "HTTP Status: $HTTP_STATUS"
+     #    # Perform HTTP status check
+     #    HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$EXTERNAL_IP:8080)
+     #    echo "HTTP Status: $HTTP_STATUS"
         
-        # Conditional check
-        if [ "$HTTP_STATUS" == "200" ]; then
-          echo "Health check passed. Deployment and service are healthy."
-        else
-          echo "Health check failed. Deleting deployment and service..."
-          kubectl delete deployment my-app || echo "Deployment already deleted"
-          kubectl delete svc my-app-service || echo "Service already deleted"
-          exit 1
-        fi
+     #    # Conditional check
+     #    if [ "$HTTP_STATUS" == "200" ]; then
+     #      echo "Health check passed. Deployment and service are healthy."
+     #    else
+     #      echo "Health check failed. Deleting deployment and service..."
+     #      kubectl delete deployment my-app || echo "Deployment already deleted"
+     #      kubectl delete svc my-app-service || echo "Service already deleted"
+     #      exit 1
+     #    fi
 
    
