@@ -1,4 +1,4 @@
-name: DevSecOps_Pipeline_Final_BKP
+name: DevSecOps_Pipeline_Multistage
 
 on:
   push:
@@ -126,6 +126,7 @@ jobs:
         fi
 
   Image-Build:
+    needs: build
     runs-on: ubuntu-22.04
     container:
       image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
