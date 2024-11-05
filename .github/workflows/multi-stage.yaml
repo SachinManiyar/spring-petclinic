@@ -400,6 +400,39 @@ jobs:
        run: |
         cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
        shell: bash
+
+  Image-Deploy:
+    needs: Image-Build
+    runs-on: ubuntu-22.04
+    container:
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
+      
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+      
+    
+    steps:
+     - name: Checkout Code
+       uses: actions/checkout@v4
+
+     - name: Install Necessary Tools and Dependencies
+       id: install_tools_and_dependencies
+       run: |
+        chmod +x ./install_dependencies/install_tools.sh
+    
+        echo "Starting tool installation..."
+        {
+          ./install_dependencies/install_tools.sh
+        } || {
+          echo "Error: Tool installation failed."
+          exit 1
+        }
+        
+        echo "Tool installation completed successfully.
      
      - name: Login to Azure
        uses: azure/login@v1
@@ -452,50 +485,3 @@ jobs:
           echo "Error deploying service."
           exit 1
          fi
-
-     # - name: Post Deployment Health Check
-     #   run: |
-     #    echo "Checking the status of the deployed deployment..."
-     #    if kubectl get deployment my-appp; then
-     #      echo "Deployment is ready."
-     #    else
-     #      echo "Error: Deployment is not ready."
-     #      exit 1
-     #    fi
-    
-     #    echo "Checking the status of the service..."
-     #    if kubectl get svc my-app-service; then
-     #      echo "Service is available."
-     #    else
-     #      echo "Error: Service is not available."
-     #      exit 1
-     #    fi
-
-     # - name: HTTP Status Check and Conditional Cleanup
-     #   run: |
-     #    echo "Performing HTTP status check on the service..."
-        
-     #    # Fetch the external IP of the service dynamically
-     #    EXTERNAL_IP=$(kubectl get svc my-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-     #    if [ -z "$EXTERNAL_IP" ]; then
-     #      echo "Error: Unable to retrieve the external IP."
-     #      exit 1
-     #    fi
-        
-     #    echo "Service External IP: $EXTERNAL_IP"
-        
-     #    # Perform HTTP status check
-     #    HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$EXTERNAL_IP:8080)
-     #    echo "HTTP Status: $HTTP_STATUS"
-        
-     #    # Conditional check
-     #    if [ "$HTTP_STATUS" == "200" ]; then
-     #      echo "Health check passed. Deployment and service are healthy."
-     #    else
-     #      echo "Health check failed. Deleting deployment and service..."
-     #      kubectl delete deployment my-app || echo "Deployment already deleted"
-     #      kubectl delete svc my-app-service || echo "Service already deleted"
-     #      exit 1
-     #    fi
-
-   
