@@ -1,0 +1,480 @@
+name: DevSecOps_Pipeline_Final_BKP
+
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
+
+env:
+  SBOM_FILE: sbom.json # Defines the name of the Software Bill of Materials (SBOM) file (sbom.json) to be generated or used.
+  SOURCE_DIR: .  # Specifies the source directory for the files to be scanned, with `.` indicating the current directory.
+  OUTPUT_FORMAT: cyclonedx-json # Sets the output format for the SBOM or scan results, using CycloneDX format in JSON.
+  OWNER: ${{ secrets.OWNER_NAME }} # Retrieves the owner’s name (e.g., repo or project owner) from the GitHub Secrets.
+  GH_TOKEN: ${{ secrets.CR_PASSWORD }}  # GitHub token or password stored in GitHub Secrets, typically used for authentication in GitHub API or registry access.
+  LOG_FILE: "trivy_scan_results.log" # Specifies the file where the Trivy vulnerability scan results will be logged.
+  GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic  # Sets the Git repository's safe directory to avoid security warnings during Git operations.
+  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}  # Retrieves the Docker image name from GitHub Secrets, used in various steps like image scanning or deployment.
+  IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  # Retrieves the version or tag of the Docker image from GitHub Secrets, used alongside the image name.
+  APP_NAME: spring-petclinic # Application Name
+  
+jobs:
+   
+  build:
+    runs-on: ubuntu-22.04
+    container:
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
+      
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+      
+    
+    steps:
+     - name: Checkout Code
+       uses: actions/checkout@v4
+   
+     - name: Install Necessary Tools and Dependencies
+       id: install_tools_and_dependencies
+       run: |
+        chmod +x ./install_dependencies/install_tools.sh
+    
+        echo "Starting tool installation..."
+        {
+          ./install_dependencies/install_tools.sh
+        } || {
+          echo "Error: Tool installation failed."
+          exit 1
+        }
+        
+        echo "Tool installation completed successfully."
+
+     - name: Build with Maven Wrapper
+       run: |
+        echo "Starting Build with Maven Wrapper..."
+        chmod +x ./build/build_maven.sh
+        set -x  # Enable script debugging
+        ./build/build_maven.sh
+        if [ $? -ne 0 ]; then
+          echo "Error: Maven build process failed. Please check the logs."
+          # Display the logs
+          echo "Build logs:"
+          cat build.log
+          exit 1
+        else
+          echo "Maven build completed successfully."
+        fi
+
+  
+     - name: Cache SonarQube packages
+       uses: actions/cache@v4
+       with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+     - name: Cache Maven packages
+       uses: actions/cache@v4
+       with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+     - name: Build and analyze
+       env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}      
+       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
+
+     - name: Check SonarQube Quality Gate
+       run: |
+        sleep 20
+        STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "${{ secrets.HOST_URL }} api/qualitygates/project_status?projectKey=spring-petclinic" | jq -r '.projectStatus.status')
+        echo "Quality Gate Status: $STATUS"
+        if [ "$STATUS" != "OK" ]; then
+        echo "SonarQube Quality Gate failed"
+        fi
+
+     - name: Generate SBOM with Syft
+       run: |
+          echo "Starting SBOM generation with Syft..."
+          syft dir:${SOURCE_DIR} -o ${OUTPUT_FORMAT} > ${SBOM_FILE}
+          
+          # Check if the SBOM generation was successful
+          if [ $? -ne 0 ]; then
+            echo "Error: Failed to generate SBOM with Syft."
+            exit 1
+          else
+            echo "SBOM generated successfully and saved to ${SBOM_FILE}."
+          fi
+
+     - name: Upload SBOM
+       id: upload_sbom  
+       uses: actions/upload-artifact@v4
+       with:
+        name: sbom
+        path: ${{ env.SBOM_FILE }}
+
+     - name: Check SBOM Upload Status
+       run: |
+        if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
+          echo "SBOM file uploaded successfully."
+        else
+          echo "Error: Failed to upload SBOM file."
+          exit 1
+        fi
+
+  Image-Build:
+    runs-on: ubuntu-22.04
+    container:
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
+      
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+      
+    
+    steps:
+     - name: Checkout Code
+       uses: actions/checkout@v4
+
+     - name: Build Application Docker Image using Maven
+       run: |
+          chmod +x ./build/dockerfile_build.sh
+          if ./build/dockerfile_build.sh; then
+            echo "Success: Docker image built successfully."
+          else
+            echo "Error: Docker image build failed."
+            exit 1
+          fi
+
+     - name: Log in to GitHub Container Registry
+       id: login_registry
+       uses: docker/login-action@v2
+       with:
+          username: ${{ secrets.CR_Username }}
+          password: ${{ secrets.CR_Password }}
+          registry: ghcr.io
+          
+
+     - name: Scan Application Docker Image with Trivy
+       id: scan_docker_image
+       run: |
+         trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
+         # echo "Trivy scan completed. Results saved to ${{ env.LOG_FILE }}"
+         echo "Trivy scan completed. Results:"
+         cat ${{ env.LOG_FILE }}  # This prints the scan results in the log
+
+     - name: Upload Trivy Scan Results
+       uses: actions/upload-artifact@v3
+       with:
+        name: trivy-scan-results
+        path: ${{ env.LOG_FILE }}
+         
+     - name: Push Application Docker Image to GitHub Container Registry
+       id: push_docker_image
+       run: |
+          if docker push ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION}}; then
+            echo "Success: Docker image pushed successfully."
+          else
+            echo "Error: Pushing Docker image failed."
+            exit 1
+          fi
+
+     - name: Get SHA256 ID of Application Docker Image
+       id: get_image_sha
+       run: |
+          IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }} | cut -d'@' -f2)
+          echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "::set-output name=image_sha::$IMAGE_SHA"
+
+     - name: Sign Docker Image
+       id: sign_docker_image
+       run: |
+          echo "${{ secrets.COSIGN_KEY }}" | tr -d '\r' > cosign.key
+          chmod 600 cosign.key
+          
+          if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes; then
+            echo "Success: Docker image signed successfully."
+          else
+            echo "Error: Signing Docker image failed."
+            exit 1
+          fi
+       env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     - name: Public Key Creation
+       id: create_public_key
+       run: |
+        if cosign public-key --key env://COSIGN_KEY > cosign.pub; then
+          echo "Success: Cosign Public Key created successfully."
+        else
+          echo "Error: Cosign Public Key creation failed."
+          exit 1
+        fi   
+       env:
+        COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+
+     - name: Attach SBOM with Application Docker Image
+       id: attach_sbom
+       run: |
+        set -e
+        echo "Attaching SBOM to the Docker image..."
+        output=$(cosign attach sbom --sbom ${{ env.SBOM_FILE }} ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1) || {
+          echo "Error: Failed to run cosign attach sbom."
+          echo "Output: $output"
+          exit 1
+        }
+    
+        echo "Success: SBOM attached successfully."
+        echo "Command output:"
+        echo "$output"
+    
+        # Extract SBOM filename from the output
+        sbom_filename=$(echo "$output" | grep -oP 'sha256-[\w\d]+\.sbom') || {
+          echo "Error: Failed to extract SBOM filename."
+          echo "Output: $output"
+          exit 1
+        }
+    
+        # Check if sbom_filename is empty
+        if [ -z "$sbom_filename" ]; then
+          echo "Error: No SBOM filename found in the output."
+          echo "Output: $output"
+          exit 1
+        fi
+    
+        echo "Success: SBOM filename extracted: $sbom_filename."
+    
+        # Extract the SHA from the SBOM filename
+        sbom_sha=$(echo "$sbom_filename" | cut -d'-' -f2) 
+        echo "SBOM SHA: $sbom_sha"
+    
+        # Store the SBOM filename and SHA as environment variables for later use
+        echo "SBOM_FILENAME=$sbom_filename" >> $GITHUB_ENV
+        echo "SBOM_SHA=$sbom_sha" >> $GITHUB_ENV
+
+
+     - name: Signing image
+       id: sign_sbom
+       run: |
+          set -e
+          if [ -z "$SBOM_FILENAME" ]; then
+            echo "Error: SBOM_FILENAME environment variable is not set"
+            exit 1
+          fi
+          echo "Signing SBOM with filename: $SBOM_FILENAME"
+          cosign sign --key env://COSIGN_KEY ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME --yes && { echo "Success: SBOM created successfully"; } || { echo "Error: Failed to sign with SBOM"; exit 1; }
+
+       env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     - name: Verifying SBOM Signature of signed image
+       id: verify_sbom_signature
+       run: |
+          set -e
+          echo "sbom filename:$SBOM_FILENAME"
+          cosign verify --key cosign.pub ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME | jq . && { echo "Success: Verification of SBOM signature succesfull"; } || { echo "Error: Verification of SBOM signature failed"; exit 1; }
+
+     - name: Sign SBOM
+       id: sign_sbom_blob
+       run: |
+          cosign sign-blob --yes --key env://COSIGN_KEY sbom.json --bundle cosign.bundle 2>&1 && { echo "Success: Signing SBOM is succesfull"; } || { echo "Error: Signing SBOM failed"; exit 1; }
+       env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     - name: Set Git Safe Directory
+       id: set_git_safe_directory
+       run: git config --global --add safe.directory $GIT_SAFE_DIRECTORY
+
+     - name: Fetch Commit Details
+       id: fetch_commit_details
+       run: |
+          # Get the commit ID
+          COMMIT_ID=$(git rev-parse HEAD)
+          # Get the branch name
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          # Get the author name and email
+          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
+          # Get the pull request number from GitHub context if it's a PR
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+          else
+            PR_NUMBER="Not applicable"
+          fi
+          # Get the GitHub repository URL
+          REPO_URL="https://github.com/${{ github.repository }}"
+          
+          # Fetch the SBOM SHA from cosign bundle (assuming the SBOM SHA is stored or signed)
+          SBOM_SHA=$(cosign upload blob -f cosign.bundle ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1 | grep -oP 'sha256:[\w\d]{64}' | head -n 1)
+ 
+          #Create SBOM link
+          SBOM_LINK="https://github.com/${{ env.OWNER }}/${{ env.APP_NAME }}/raw/$BRANCH_NAME/sbom.json"
+          
+          # Create JSON output
+          OUTPUT=$(jq -n \
+            --arg commit_id "$COMMIT_ID" \
+            --arg author_name "$AUTHOR_NAME" \
+            --arg author_email "$AUTHOR_EMAIL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg uri "$REPO_URL" \
+            --arg sbom_sha "$SBOM_SHA" \
+            --arg sbom_link "$SBOM_LINK" \
+            '{
+              commit_id: $commit_id,
+              git_author_name: $author_name,
+              git_author_email: $author_email,
+              branch: $branch,
+              uri: $uri,
+              sbom_sha: $sbom_sha,
+              sbom_link: $sbom_link
+            }')
+          # Save JSON output to a file
+          echo "$OUTPUT" >> output.json
+          echo "SBOM File ---------------------" >> output.json
+          cat sbom.json >> output.json
+          # Print the contents of the JSON file
+          cat output.json
+
+       # Step 21: Upload JSON file
+     - name: Upload JSON file
+       id: upload_json_file
+       uses: actions/upload-artifact@v3
+       with:
+          name: git-details
+          path: output.json
+          
+     - name: SBOM_Upload_for_Dependency_Tracker
+       run: |
+        chmod +x ./build/sbom_upload.sh
+        set -x  # Enable script debugging
+        ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+        if [ $? -ne 0 ]; then
+          echo "Error: SBOM_Upload_for_Dependency_Tracker failed."
+          exit 1
+        else
+          echo "SBOM_Upload_for_Dependency_Tracker completed successfully."
+        fi
+         
+
+     - name: Attest Image using Predicate
+       run: |
+        cosign attest --key env://COSIGN_KEY --predicate output.json  ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
+       shell: bash
+       env:
+        COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
+
+     - name: Verify Predicate Attestation
+       run: |
+        cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+       shell: bash
+     
+     - name: Login to Azure
+       uses: azure/login@v1
+       with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          continue-on-error: true
+     - name: Check Azure Login Status
+       run: |
+         if [ $? -eq 0 ]; then
+          echo "Successfully logged in to Azure."
+         else
+          echo "Error: Azure login failed."
+          exit 1
+         fi
+
+     - name: Verify the AKS Cluster via Managed Identity
+       run: |
+         CLUSTER_MANAGED_ID=$(az aks show --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --query identity.principalId --output tsv) || { echo "Failed to fetch Managed Identity"; exit 1; }
+        
+         EXPECTED_MANAGED_ID="${{ secrets.EXPECTED_MANAGED_ID }}"
+        
+         if [[ "$EXPECTED_MANAGED_ID" != "$CLUSTER_MANAGED_ID" ]]; then
+          echo "Error: Managed Identity does not match. Aborting deployment."
+          exit 1
+         else
+          echo "Managed Identity verified successfully."
+         fi
+
+     - name: Download kubeconfig file
+       run: |
+          if az aks get-credentials --resource-group ${{ secrets.RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }} --admin --overwrite-existing; then
+            echo "Kubeconfig downloaded successfully."
+          else
+            echo "Error: Failed to download kubeconfig file."
+            exit 1
+          fi
+
+  
+     - name: Deploy to AKS
+       run: |
+         if kubectl apply -f K8s/deployment.yaml; then
+          echo "Deployment applied successfully."
+         else
+          echo "Error deploying application."
+          exit 1
+         fi
+         if kubectl apply -f K8s/service.yaml; then
+          echo "Service applied successfully."
+         else
+          echo "Error deploying service."
+          exit 1
+         fi
+
+     # - name: Post Deployment Health Check
+     #   run: |
+     #    echo "Checking the status of the deployed deployment..."
+     #    if kubectl get deployment my-appp; then
+     #      echo "Deployment is ready."
+     #    else
+     #      echo "Error: Deployment is not ready."
+     #      exit 1
+     #    fi
+    
+     #    echo "Checking the status of the service..."
+     #    if kubectl get svc my-app-service; then
+     #      echo "Service is available."
+     #    else
+     #      echo "Error: Service is not available."
+     #      exit 1
+     #    fi
+
+     # - name: HTTP Status Check and Conditional Cleanup
+     #   run: |
+     #    echo "Performing HTTP status check on the service..."
+        
+     #    # Fetch the external IP of the service dynamically
+     #    EXTERNAL_IP=$(kubectl get svc my-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     #    if [ -z "$EXTERNAL_IP" ]; then
+     #      echo "Error: Unable to retrieve the external IP."
+     #      exit 1
+     #    fi
+        
+     #    echo "Service External IP: $EXTERNAL_IP"
+        
+     #    # Perform HTTP status check
+     #    HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$EXTERNAL_IP:8080)
+     #    echo "HTTP Status: $HTTP_STATUS"
+        
+     #    # Conditional check
+     #    if [ "$HTTP_STATUS" == "200" ]; then
+     #      echo "Health check passed. Deployment and service are healthy."
+     #    else
+     #      echo "Health check failed. Deleting deployment and service..."
+     #      kubectl delete deployment my-app || echo "Deployment already deleted"
+     #      kubectl delete svc my-app-service || echo "Service already deleted"
+     #      exit 1
+     #    fi
+
+   
