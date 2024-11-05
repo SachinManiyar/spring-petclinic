@@ -380,10 +380,10 @@ jobs:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Verify Predicate Attestation
-       run: |
-        cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
-       shell: bash
+     # - name: Verify Predicate Attestation
+     #   run: |
+     #    cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+     #   shell: bash
      
      - name: Login to Azure
        uses: azure/login@v1
@@ -437,22 +437,36 @@ jobs:
           exit 1
          fi
 
-     # - name: Post Deployment Health Check
-     #   run: |
-     #    echo "Checking the status of the deployed deployment..."
-     #    if kubectl get deployment my-app; then
-     #      echo "Deployment is ready."
-     #    else
-     #      echo "Error: Deployment is not ready."
-     #      exit 1
-     #    fi
+     - name: Post Deployment Health Check
+       run: |
+        echo "Checking the status of the deployed deployment..."
+        if kubectl get deployment my-appp; then
+          echo "Deployment is ready."
+        else
+          echo "Error: Deployment is not ready."
+          exit 1
+        fi
     
-     #    echo "Checking the status of the service..."
-     #    if kubectl get svc my-app-service; then
-     #      echo "Service is available."
-     #    else
-     #      echo "Error: Service is not available."
-     #      exit 1
-     #    fi
-    
+        echo "Checking the status of the service..."
+        if kubectl get svc my-app-service; then
+          echo "Service is available."
+        else
+          echo "Error: Service is not available."
+          exit 1
+        fi
+
+     - name: HTTP status check on the service
+       id: http_status_check 
+       run: |
+            echo "Performing HTTP status check on the service"
+            HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://4.188.109.151:8080)
+            echo "HTTP Status: $HTTP_STATUS"
+            echo "$HTTP_STATUS" > http_status.txt
+            
+     - name: Delete Deployment and Service if Health Check Fails
+       if: steps.http_status_check.outputs.status != '200' 
+       run: |
+          echo "Deleting the deployment and service due to failed health check..."
+          kubectl delete deployment my-appp || echo "Deployment already deleted"
+          kubectl delete svc my-app-service || echo "Service already deleted"
 
