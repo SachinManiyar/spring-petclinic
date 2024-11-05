@@ -125,34 +125,6 @@ jobs:
           exit 1
         fi
 
-     # - name: Generate SBOM attestation
-     #   id: attest_sbom
-     #   uses: actions/attest-sbom@v1
-     #   with:
-     #      subject-path: ${{ env.SBOM_FILE }}  
-     #      sbom-path: ${{ env.SBOM_FILE }}  
-          
-     # - name: Check SBOM attestation result
-     #   run: |
-     #    echo "Checking SBOM attestation result..."
-     #    # Check if the attest_sbom step was successful
-     #    if [ "${{ steps.attest_sbom.outcome }}" != "success" ]; then
-     #      echo "Error: SBOM attestation failed."
-     #      exit 1
-     #    else
-     #      echo "SBOM attestation completed successfully."
-     #    fi
-
-     # - name: Verify SBOM attestation
-     #   run: |
-     #      echo "Starting SBOM attestation verification for ${SBOM_FILE}..."
-     #      if gh attestation verify ./${{ env.SBOM_FILE }} --owner ${{ env.OWNER }} --format=json | jq .; then
-     #        echo "Success: SBOM attestation verification completed successfully."
-     #      else
-     #        echo "Error: SBOM attestation verification failed."
-     #        exit 1
-     #      fi
-
      - name: Build Application Docker Image using Maven
        run: |
           chmod +x ./build/dockerfile_build.sh
@@ -294,23 +266,6 @@ jobs:
           set -e
           echo "sbom filename:$SBOM_FILENAME"
           cosign verify --key cosign.pub ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME | jq . && { echo "Success: Verification of SBOM signature succesfull"; } || { echo "Error: Verification of SBOM signature failed"; exit 1; }
-          
-     # - name: Directly attest SBOM with the Image
-     #   id: attestt_sbom
-     #   run: |
-     #      set -e
-     #      output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes 2>&1) && { echo "Success: Attest SBOM with the image succesfull"; } || { echo "Error: Failed to attest SBOM with the image"; exit 1; }
-     #      echo "output: $output"
-     #   env:
-     #      COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-     #      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-
-     # - name: Verify the attested Image
-     #   id: verify_attested_image
-     #   run: |
-     #      set -e
-     #      output1=$(cosign verify-attestation --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq . 2>&1) && { echo "Success: verify the attested image is  succesfull"; } || { echo "Error: Failed to verify the attested image"; exit 1; }
-     #      echo "output: $output1"
 
      - name: Sign SBOM
        id: sign_sbom_blob
@@ -383,19 +338,6 @@ jobs:
         else
           echo "SBOM_Upload completed successfully."
         fi
- 
-  
-     - name: vulnerability_score_check
-       run: |
-          chmod +x ./build/Vunerability_score.sh
-          set -x  # Enable script debugging
-          ./build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
-          if [ $? -ne 0 ]; then
-            echo "Error: vulnerability_score_check failed."
-            exit 1
-          else
-            echo "vulnerability_score_check completed successfully."
-          fi
          
 
      - name: Attest Image using Predicate
