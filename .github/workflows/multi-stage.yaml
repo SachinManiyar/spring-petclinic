@@ -432,7 +432,7 @@ jobs:
           exit 1
         }
         
-        echo "Tool installation completed successfully.
+        echo "Tool installation completed successfully." 
      
      - name: Login to Azure
        uses: azure/login@v1
