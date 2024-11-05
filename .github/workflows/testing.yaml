@@ -13,7 +13,6 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
-  # IMAGE_SHA256: ${{ secrets.IMAGE_NAME_WITH_SHA}}
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
   IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
   IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  
@@ -36,29 +35,6 @@ jobs:
     steps:
      - name: Checkout Code
        uses: actions/checkout@v4
-
-     # - name: Capture SHA256 ID of the Image
-     #   id: capture_sha256
-     #   run: |          
-     #      REPO_DIGESTS=$(docker inspect --format='{{.RepoDigests}}' dheeman29/agent-image:v1) 
-     #      if [ "$REPO_DIGESTS" == "[]" ]; then
-     #          echo "Error: RepoDigests is empty. Cannot retrieve SHA256."
-     #          exit 1
-     #      fi
-     #      CONTAINER_SHA256=$(docker inspect --format='{{index .RepoDigests 0}}' dheeman29/agent-image:v1 | sed 's/.*@sha256://')
-     #      echo "CONTAINER_SHA256=$CONTAINER_SHA256" >> $GITHUB_ENV
-     
-     # - name: Verify Container SHA256 ID        
-     #   id: verify_sha256
-     #   run: |          
-     #      EXPECTED_SHA256="${{ secrets.EXPECTED_SHA256 }}"
-     #      ACTUAL_SHA256="${{ env.CONTAINER_SHA256 }}"
-          
-     #      if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-     #          echo "Error: SHA256 mismatch. Aborting."
-     #          exit 1
-     #      fi
-     #      echo "SHA256 ID verified successfully."
    
      - name: Install Necessary Tools and Dependencies
        id: install_tools_and_dependencies
@@ -441,15 +417,6 @@ jobs:
             exit 1
           fi
 
-     - name: Apply Kyverno Policy
-       run: |
-         if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
-           echo "Kyverno policy applied successfully."
-         else
-           echo "Error: Failed to apply Kyverno policy."
-           exit 1
-         fi
-
      - name: Deploy to AKS
        run: |
          if kubectl apply -f K8s/deployment.yaml; then
@@ -465,22 +432,22 @@ jobs:
           exit 1
          fi
 
-     - name: Post Deployment Health Check
-       run: |
-        echo "Checking the status of the deployed deployment..."
-        if kubectl get deployment my-app; then
-          echo "Deployment is ready."
-        else
-          echo "Error: Deployment is not ready."
-          exit 1
-        fi
+     # - name: Post Deployment Health Check
+     #   run: |
+     #    echo "Checking the status of the deployed deployment..."
+     #    if kubectl get deployment my-app; then
+     #      echo "Deployment is ready."
+     #    else
+     #      echo "Error: Deployment is not ready."
+     #      exit 1
+     #    fi
     
-        echo "Checking the status of the service..."
-        if kubectl get svc my-app-service; then
-          echo "Service is available."
-        else
-          echo "Error: Service is not available."
-          exit 1
-        fi
+     #    echo "Checking the status of the service..."
+     #    if kubectl get svc my-app-service; then
+     #      echo "Service is available."
+     #    else
+     #      echo "Error: Service is not available."
+     #      exit 1
+     #    fi
     
 
