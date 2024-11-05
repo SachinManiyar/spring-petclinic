@@ -109,21 +109,21 @@ jobs:
             echo "SBOM generated successfully and saved to ${SBOM_FILE}."
           fi
 
-     # - name: Upload SBOM
-     #   id: upload_sbom  
-     #   uses: actions/upload-artifact@v4
-     #   with:
-     #    name: sbom
-     #    path: ${{ env.SBOM_FILE }}
+     - name: Upload SBOM
+       id: upload_sbom  
+       uses: actions/upload-artifact@v4
+       with:
+        name: sbom
+        path: ${{ env.SBOM_FILE }}
 
-     # - name: Check SBOM Upload Status
-     #   run: |
-     #    if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
-     #      echo "SBOM file uploaded successfully."
-     #    else
-     #      echo "Error: Failed to upload SBOM file."
-     #      exit 1
-     #    fi
+     - name: Check SBOM Upload Status
+       run: |
+        if [ "${{ steps.upload_sbom.outcome }}" = "success" ]; then
+          echo "SBOM file uploaded successfully."
+        else
+          echo "Error: Failed to upload SBOM file."
+          exit 1
+        fi
 
      - name: Build Application Docker Image using Maven
        run: |
@@ -327,24 +327,32 @@ jobs:
           echo "SBOM File ---------------------" >> output.json
           cat sbom.json >> output.json
           # Print the contents of the JSON file
-          cat output.json      
+          cat output.json
+
+       # Step 21: Upload JSON file
+     - name: Upload JSON file
+       id: upload_json_file
+       uses: actions/upload-artifact@v3
+       with:
+          name: git-details
+          path: output.json
           
-     - name: SBOM_Upload
+     - name: SBOM_Upload_for_Dependency_Tracker
        run: |
         chmod +x ./build/sbom_upload.sh
         set -x  # Enable script debugging
         ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
         if [ $? -ne 0 ]; then
-          echo "Error: SBOM_Upload failed."
+          echo "Error: SBOM_Upload_for_Dependency_Tracker failed."
           exit 1
         else
-          echo "SBOM_Upload completed successfully."
+          echo "SBOM_Upload_for_Dependency_Tracker completed successfully."
         fi
          
 
      - name: Attest Image using Predicate
        run: |
-        cosign attest --key env://COSIGN_KEY --predicate output.json --type https://example.com/CodeReview/v1 ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
+        cosign attest --key env://COSIGN_KEY --predicate output.json  ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
        shell: bash
        env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
@@ -352,7 +360,7 @@ jobs:
 
      - name: Verify Predicate Attestation
        run: |
-        cosign verify-attestation --type https://example.com/CodeReview/v1 --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+        cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
        shell: bash
      
      - name: Login to Azure
