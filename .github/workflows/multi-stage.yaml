@@ -143,6 +143,21 @@ jobs:
      - name: Checkout Code
        uses: actions/checkout@v4
 
+     - name: Install Necessary Tools and Dependencies
+       id: install_tools_and_dependencies
+       run: |
+        chmod +x ./install_dependencies/install_tools.sh
+    
+        echo "Starting tool installation..."
+        {
+          ./install_dependencies/install_tools.sh
+        } || {
+          echo "Error: Tool installation failed."
+          exit 1
+        }
+        
+        echo "Tool installation completed successfully."
+
      - name: Build Application Docker Image using Maven
        run: |
           chmod +x ./build/dockerfile_build.sh
