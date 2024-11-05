@@ -383,10 +383,6 @@ jobs:
         else
           echo "SBOM_Upload completed successfully."
         fi
-
-
-     # - name: Run the shell script
-     #   run: ./project_creation_sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
  
   
      - name: vulnerability_score_check
@@ -401,10 +397,6 @@ jobs:
             echo "vulnerability_score_check completed successfully."
           fi
          
-          
-
-     # - name: Run the shell script
-     #   run: ./vulnerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -d ${{ secrets.D_SCORE }} -v ${{ secrets.V_SCORE }} 
 
      - name: Attest Image using Predicate
        run: |
@@ -486,6 +478,33 @@ jobs:
           echo "Service is available."
         else
           echo "Error: Service is not available."
+          exit 1
+        fi
+
+     - name: HTTP Status Check and Conditional Cleanup
+       run: |
+        echo "Performing HTTP status check on the service..."
+        
+        # Fetch the external IP of the service dynamically
+        EXTERNAL_IP=$(kubectl get svc my-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        if [ -z "$EXTERNAL_IP" ]; then
+          echo "Error: Unable to retrieve the external IP."
+          exit 1
+        fi
+        
+        echo "Service External IP: $EXTERNAL_IP"
+        
+        # Perform HTTP status check
+        HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$EXTERNAL_IP:8080)
+        echo "HTTP Status: $HTTP_STATUS"
+        
+        # Conditional check
+        if [ "$HTTP_STATUS" == "200" ]; then
+          echo "Health check passed. Deployment and service are healthy."
+        else
+          echo "Health check failed. Deleting deployment and service..."
+          kubectl delete deployment my-app || echo "Deployment already deleted"
+          kubectl delete svc my-app-service || echo "Service already deleted"
           exit 1
         fi
 
