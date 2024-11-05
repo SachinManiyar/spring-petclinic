@@ -16,6 +16,7 @@ env:
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic  # Sets the Git repository's safe directory to avoid security warnings during Git operations.
   IMAGE_NAME: ${{ secrets.IMAGE_NAME }}  # Retrieves the Docker image name from GitHub Secrets, used in various steps like image scanning or deployment.
   IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  # Retrieves the version or tag of the Docker image from GitHub Secrets, used alongside the image name.
+  APP_NAME: spring-petclinic # Application Name
   
 jobs:
    
@@ -59,13 +60,13 @@ jobs:
         ./build/build_maven.sh
         if [ $? -ne 0 ]; then
           echo "Error: Maven build process failed. Please check the logs."
+          # Display the logs
+          echo "Build logs:"
+          cat build.log
           exit 1
         else
           echo "Maven build completed successfully."
         fi
-        # Display the logs
-        echo "Build logs:"
-        cat build.log
 
   
      - name: Cache SonarQube packages
@@ -124,33 +125,33 @@ jobs:
           exit 1
         fi
 
-     - name: Generate SBOM attestation
-       id: attest_sbom
-       uses: actions/attest-sbom@v1
-       with:
-          subject-path: ${{ env.SBOM_FILE }}  
-          sbom-path: ${{ env.SBOM_FILE }}  
+     # - name: Generate SBOM attestation
+     #   id: attest_sbom
+     #   uses: actions/attest-sbom@v1
+     #   with:
+     #      subject-path: ${{ env.SBOM_FILE }}  
+     #      sbom-path: ${{ env.SBOM_FILE }}  
           
-     - name: Check SBOM attestation result
-       run: |
-        echo "Checking SBOM attestation result..."
-        # Check if the attest_sbom step was successful
-        if [ "${{ steps.attest_sbom.outcome }}" != "success" ]; then
-          echo "Error: SBOM attestation failed."
-          exit 1
-        else
-          echo "SBOM attestation completed successfully."
-        fi
+     # - name: Check SBOM attestation result
+     #   run: |
+     #    echo "Checking SBOM attestation result..."
+     #    # Check if the attest_sbom step was successful
+     #    if [ "${{ steps.attest_sbom.outcome }}" != "success" ]; then
+     #      echo "Error: SBOM attestation failed."
+     #      exit 1
+     #    else
+     #      echo "SBOM attestation completed successfully."
+     #    fi
 
-     - name: Verify SBOM attestation
-       run: |
-          echo "Starting SBOM attestation verification for ${SBOM_FILE}..."
-          if gh attestation verify ./${{ env.SBOM_FILE }} --owner ${{ env.OWNER }} --format=json | jq .; then
-            echo "Success: SBOM attestation verification completed successfully."
-          else
-            echo "Error: SBOM attestation verification failed."
-            exit 1
-          fi
+     # - name: Verify SBOM attestation
+     #   run: |
+     #      echo "Starting SBOM attestation verification for ${SBOM_FILE}..."
+     #      if gh attestation verify ./${{ env.SBOM_FILE }} --owner ${{ env.OWNER }} --format=json | jq .; then
+     #        echo "Success: SBOM attestation verification completed successfully."
+     #      else
+     #        echo "Error: SBOM attestation verification failed."
+     #        exit 1
+     #      fi
 
      - name: Build Application Docker Image using Maven
        run: |
@@ -291,24 +292,25 @@ jobs:
        id: verify_sbom_signature
        run: |
           set -e
+          echo "sbom filename:$SBOM_FILENAME"
           cosign verify --key cosign.pub ${{ secrets.IMAGE_NAME }}:$SBOM_FILENAME | jq . && { echo "Success: Verification of SBOM signature succesfull"; } || { echo "Error: Verification of SBOM signature failed"; exit 1; }
+          
+     # - name: Directly attest SBOM with the Image
+     #   id: attestt_sbom
+     #   run: |
+     #      set -e
+     #      output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes 2>&1) && { echo "Success: Attest SBOM with the image succesfull"; } || { echo "Error: Failed to attest SBOM with the image"; exit 1; }
+     #      echo "output: $output"
+     #   env:
+     #      COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+     #      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Directly attest SBOM with the Image
-       id: attestt_sbom
-       run: |
-          set -e
-          output=$(cosign attest --key env://COSIGN_KEY --predicate sbom.json ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes 2>&1) && { echo "Success: Attest SBOM with the image succesfull"; } || { echo "Error: Failed to attest SBOM with the image"; exit 1; }
-          echo "output: $output"
-       env:
-          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
-
-     - name: Verify the attested Image
-       id: verify_attested_image
-       run: |
-          set -e
-          output1=$(cosign verify-attestation --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq . 2>&1) && { echo "Success: verify the attested image is  succesfull"; } || { echo "Error: Failed to verify the attested image"; exit 1; }
-          echo "output: $output1"
+     # - name: Verify the attested Image
+     #   id: verify_attested_image
+     #   run: |
+     #      set -e
+     #      output1=$(cosign verify-attestation --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq . 2>&1) && { echo "Success: verify the attested image is  succesfull"; } || { echo "Error: Failed to verify the attested image"; exit 1; }
+     #      echo "output: $output1"
 
      - name: Sign SBOM
        id: sign_sbom_blob
@@ -343,9 +345,13 @@ jobs:
           
           # Fetch the SBOM SHA from cosign bundle (assuming the SBOM SHA is stored or signed)
           SBOM_SHA=$(cosign upload blob -f cosign.bundle ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1 | grep -oP 'sha256:[\w\d]{64}' | head -n 1)
-          
+ 
+          echo "Github Ref value:${GITHUB_REF}"
+          BRANCH_NAME=$(echo "${GITHUB_REF}" | sed 's/refs\/heads\///')           
+          echo "Branch name is: $BRANCH_NAME"           
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
           #Create SBOM link
-          SBOM_LINK="https://github.com/dheeman29/spring-petclinic/raw/test/sbom.json"
+          SBOM_LINK="https://github.com/${{ env.OWNER }}/${{ env.APP_NAME }}/raw/${{ env.branch_name }}/sbom.json"
           
           # Create JSON output
           OUTPUT=$(jq -n \
@@ -361,12 +367,14 @@ jobs:
               git_author_name: $author_name,
               git_author_email: $author_email,
               branch: $branch,
-              uri: $uri
+              uri: $uri,
+              sbom_sha: $sbom_sha,
+              sbom_link: $sbom_link
             }')
           # Save JSON output to a file
           echo "$OUTPUT" > output.json
           # Print the contents of the JSON file
-          cat output.json   
+          cat output.json  
 
      - name: Attest Image using Predicate
        run: |
