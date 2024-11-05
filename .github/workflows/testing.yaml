@@ -1,10 +1,10 @@
 name: DevSecOps Pipeline
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 env:
   SBOM_FILE: sbom.json
@@ -13,9 +13,9 @@ env:
   OWNER: ${{ secrets.OWNER_NAME }} 
   GH_TOKEN: ${{ secrets.CR_PASSWORD }}
   LOG_FILE: "trivy_scan_results.log"
-  IMAGE_SHA256: ${{ secrets.IMAGE_NAME_WITH_SHA}}
+  # IMAGE_SHA256: ${{ secrets.IMAGE_NAME_WITH_SHA}}
   GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
-  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}  # GitHub secret
+  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
   IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  
   
 jobs:
@@ -440,6 +440,15 @@ jobs:
             echo "Error: Failed to download kubeconfig file."
             exit 1
           fi
+
+     - name: Apply Kyverno Policy
+       run: |
+         if kubectl apply -f K8s/kyverno-policy-with-key.yaml; then
+           echo "Kyverno policy applied successfully."
+         else
+           echo "Error: Failed to apply Kyverno policy."
+           exit 1
+         fi
 
      - name: Deploy to AKS
        run: |
