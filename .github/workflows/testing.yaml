@@ -7,15 +7,15 @@ on:
   workflow_dispatch:
 
 env:
-  SBOM_FILE: sbom.json
-  SOURCE_DIR: .  
-  OUTPUT_FORMAT: cyclonedx-json
-  OWNER: ${{ secrets.OWNER_NAME }} 
-  GH_TOKEN: ${{ secrets.CR_PASSWORD }}
-  LOG_FILE: "trivy_scan_results.log"
-  GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic
-  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
-  IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  
+  SBOM_FILE: sbom.json # Defines the name of the Software Bill of Materials (SBOM) file (sbom.json) to be generated or used.
+  SOURCE_DIR: .  # Specifies the source directory for the files to be scanned, with `.` indicating the current directory.
+  OUTPUT_FORMAT: cyclonedx-json # Sets the output format for the SBOM or scan results, using CycloneDX format in JSON.
+  OWNER: ${{ secrets.OWNER_NAME }} # Retrieves the owner’s name (e.g., repo or project owner) from the GitHub Secrets.
+  GH_TOKEN: ${{ secrets.CR_PASSWORD }}  # GitHub token or password stored in GitHub Secrets, typically used for authentication in GitHub API or registry access.
+  LOG_FILE: "trivy_scan_results.log" # Specifies the file where the Trivy vulnerability scan results will be logged.
+  GIT_SAFE_DIRECTORY: /__w/spring-petclinic/spring-petclinic  # Sets the Git repository's safe directory to avoid security warnings during Git operations.
+  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}  # Retrieves the Docker image name from GitHub Secrets, used in various steps like image scanning or deployment.
+  IMAGE_VERSION: ${{ secrets.IMAGE_VERSION }}  # Retrieves the version or tag of the Docker image from GitHub Secrets, used alongside the image name.
   
 jobs:
    
