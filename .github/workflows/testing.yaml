@@ -346,12 +346,8 @@ jobs:
           # Fetch the SBOM SHA from cosign bundle (assuming the SBOM SHA is stored or signed)
           SBOM_SHA=$(cosign upload blob -f cosign.bundle ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} 2>&1 | grep -oP 'sha256:[\w\d]{64}' | head -n 1)
  
-          echo "Github Ref value:${GITHUB_REF}"
-          BRANCH_NAME=$(echo "${GITHUB_REF}" | sed 's/refs\/heads\///')           
-          echo "Branch name is: $BRANCH_NAME"           
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
           #Create SBOM link
-          SBOM_LINK="https://github.com/${{ env.OWNER }}/${{ env.APP_NAME }}/raw/${{ env.branch_name }}/sbom.json"
+          SBOM_LINK="https://github.com/${{ env.OWNER }}/${{ env.APP_NAME }}/raw/$BRANCH_NAME/sbom.json"
           
           # Create JSON output
           OUTPUT=$(jq -n \
@@ -425,6 +421,7 @@ jobs:
             exit 1
           fi
 
+  
      - name: Deploy to AKS
        run: |
          if kubectl apply -f K8s/deployment.yaml; then
