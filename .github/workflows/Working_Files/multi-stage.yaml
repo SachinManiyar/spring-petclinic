@@ -1,4 +1,4 @@
-name: DevSecOps_Pipeline_Multistagee
+name: DevSecOps_Pipeline_Multistage
 
 on:
   push:
