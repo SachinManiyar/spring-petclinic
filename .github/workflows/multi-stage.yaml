@@ -109,48 +109,48 @@ jobs:
           exit 1
         fi
 
-     - name: SBOM_Upload_for_Dependency_Tracker
+     - name: Upload SBOM for Software Composition Analysis 
        run: |
         chmod +x ./build/sbom_upload.sh
         set -x  # Enable script debugging
         ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
         if [ $? -ne 0 ]; then
-          echo "Error: SBOM_Upload_for_Dependency_Tracker failed."
+          echo "Error: SBOM for Software Composition Analysis failed."
           exit 1
         else
-          echo "SBOM_Upload_for_Dependency_Tracker completed successfully."
+          echo "SBOM for Software Composition Analysis  completed successfully."
         fi
 
-     - name: Vulnerability_Score_Check
+     - name: EPSS CVSS and CISA Score
        run: |
         chmod +x ./build/Vunerability_score.sh
         set -x  # Enable script debugging
-        ./build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
+        bash build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
         if [ $? -ne 0 ]; then
-          echo "Error: Vulnerability_Score_Check failed."
+          echo "Error: EPSS, CVSS and CISA Check failed."
           exit 1
         else
-          echo "Vulnerability_Score_Check completed successfully."
+          echo " EPSS, CVSS and CISA Check completed successfully."
         fi
 
     
-     - name: Build with Maven Wrapper
-       run: |
-        echo "Starting Build with Maven Wrapper..."
-        chmod +x ./build/build_maven.sh
-        set -x  # Enable script debugging
-        ./build/build_maven.sh
-        if [ $? -ne 0 ]; then
-          echo "Error: Maven build process failed. Please check the logs."
-          # Display the logs
-          echo "Build logs:"
-          cat build.log
-          exit 1
-        else
-          echo "Maven build completed successfully."
-        fi
+     # - name: Build with Maven Wrapper
+     #   run: |
+     #    echo "Starting Build with Maven Wrapper..."
+     #    chmod +x ./build/build_maven.sh
+     #    set -x  # Enable script debugging
+     #    ./build/build_maven.sh
+     #    if [ $? -ne 0 ]; then
+     #      echo "Error: Maven build process failed. Please check the logs."
+     #      # Display the logs
+     #      echo "Build logs:"
+     #      cat build.log
+     #      exit 1
+     #    else
+     #      echo "Maven build completed successfully."
+     #    fi
 
-  Image-Build:
+  Build-and-Generate-Image:
     needs: build
     runs-on: ubuntu-22.04
     container:
@@ -183,26 +183,18 @@ jobs:
         
         echo "Tool installation completed successfully."
 
-     - name: Build Application Docker Image using Maven
+     - name: Build Application Image using Maven
        run: |
           chmod +x ./build/dockerfile_build.sh
           if ./build/dockerfile_build.sh; then
-            echo "Success: Docker image built successfully."
+            echo "Success:  Image build successful."
           else
-            echo "Error: Docker image build failed."
+            echo "Error: Image build failed."
             exit 1
           fi
 
-     - name: Log in to GitHub Container Registry
-       id: login_registry
-       uses: docker/login-action@v2
-       with:
-          username: ${{ secrets.CR_Username }}
-          password: ${{ secrets.CR_Password }}
-          registry: ghcr.io
-          
 
-     - name: Scan Application Docker Image with Trivy
+     - name: Scan Application Image with Trivy
        id: scan_docker_image
        run: |
          trivy image "${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }}" > ${{ env.LOG_FILE }} || { echo "Error: Trivy scan failed"; exit 1; }
@@ -215,18 +207,27 @@ jobs:
        with:
         name: trivy-scan-results
         path: ${{ env.LOG_FILE }}
+
+     - name: Log in to GitHub Container Registry
+       id: login_registry
+       uses: docker/login-action@v2
+       with:
+          username: ${{ secrets.CR_Username }}
+          password: ${{ secrets.CR_Password }}
+          registry: ghcr.io
+          
          
-     - name: Push Application Docker Image to GitHub Container Registry
+     - name: Push Application Image to GitHub Container Registry
        id: push_docker_image
        run: |
           if docker push ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION}}; then
-            echo "Success: Docker image pushed successfully."
+            echo "Success:  Image push successful."
           else
-            echo "Error: Pushing Docker image failed."
+            echo "Error: Image push failed."
             exit 1
           fi
 
-     - name: Get SHA256 ID of Application Docker Image
+     - name: Get Image Hash
        id: get_image_sha
        run: |
           IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_VERSION }} | cut -d'@' -f2)
@@ -240,9 +241,9 @@ jobs:
           chmod 600 cosign.key
           
           if cosign sign --key cosign.key ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes; then
-            echo "Success: Docker image signed successfully."
+            echo "Success:  Image sign successful."
           else
-            echo "Error: Signing Docker image failed."
+            echo "Error: Image sign failed."
             exit 1
           fi
        env:
@@ -323,7 +324,7 @@ jobs:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Verifying SBOM Signature of signed image
+     - name: Verifying the Signature of signed image
        id: verify_sbom_signature
        run: |
           set -e
@@ -342,7 +343,7 @@ jobs:
        id: set_git_safe_directory
        run: git config --global --add safe.directory $GIT_SAFE_DIRECTORY
 
-     - name: Fetch Commit Details
+     - name: Creating Build Provenance
        id: fetch_commit_details
        run: |
           # Get the commit ID
@@ -392,7 +393,7 @@ jobs:
           # Print the contents of the JSON file
           cat output.json
 
-       # Step 21: Upload JSON file
+       # Step 21: Upload Provenance file
      - name: Upload JSON file
        id: upload_json_file
        uses: actions/upload-artifact@v3
@@ -400,7 +401,7 @@ jobs:
           name: git-details
           path: output.json   
 
-     - name: Attest Image using Predicate
+     - name: Attestation and Signing the Image with Provenance
        run: |
         cosign attest --key env://COSIGN_KEY --predicate output.json  ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} --yes || { echo "Error: Failed to attest predicate with the image"; exit 1; }
        shell: bash
@@ -408,13 +409,13 @@ jobs:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSPHRASE }}
 
-     - name: Verify Predicate Attestation
+     - name: Verify Provenance Attestation 
        run: |
-        cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Predicate attestation verification failed"; exit 1; }
+        cosign verify-attestation --certificate-github-workflow-name=.github/workflows/cicd.yml@refs/heads/testing --certificate-github-workflow-ref=refs/heads/testing --certificate-github-workflow-repository=https://github.com/dheeman2912/spring-petclinic --certificate-github-workflow-trigger=push --key cosign.pub ${{ secrets.IMAGE_NAME }}@${{ env.IMAGE_SHA }} | jq -r .payload | base64 --decode | jq . || { echo "Error: Provenance Attestation  failed"; exit 1; }
        shell: bash
 
   Image-Deploy:
-    needs: Image-Build
+    needs: Build-and-Generate-Image
     runs-on: ubuntu-22.04
     container:
       image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
@@ -497,3 +498,12 @@ jobs:
           echo "Error deploying service."
           exit 1
          fi
+
+     - name: Post Deployment Health Check
+       id: http_status_check 
+       run: |
+            echo "Performing HTTP status check on the service"
+            sleep 60
+            HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http:// 4.186.35.144:8080)
+            echo "HTTP Status: $HTTP_STATUS"
+            echo "$HTTP_STATUS" > http_status.log
