@@ -52,22 +52,6 @@ jobs:
         
         echo "Tool installation completed successfully."
 
-     - name: Build with Maven Wrapper
-       run: |
-        echo "Starting Build with Maven Wrapper..."
-        chmod +x ./build/build_maven.sh
-        set -x  # Enable script debugging
-        ./build/build_maven.sh
-        if [ $? -ne 0 ]; then
-          echo "Error: Maven build process failed. Please check the logs."
-          # Display the logs
-          echo "Build logs:"
-          cat build.log
-          exit 1
-        else
-          echo "Maven build completed successfully."
-        fi
-
   
      - name: Cache SonarQube packages
        uses: actions/cache@v4
@@ -81,13 +65,13 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-     - name: Build and analyze
+     - name: SAST Scanning
        env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}      
        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
 
-     - name: Check SonarQube Quality Gate
+     - name: SAST Quality Gate
        run: |
         sleep 20
         STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "${{ secrets.HOST_URL }} api/qualitygates/project_status?projectKey=spring-petclinic" | jq -r '.projectStatus.status')
@@ -147,6 +131,23 @@ jobs:
           exit 1
         else
           echo "Vulnerability_Score_Check completed successfully."
+        fi
+
+    
+     - name: Build with Maven Wrapper
+       run: |
+        echo "Starting Build with Maven Wrapper..."
+        chmod +x ./build/build_maven.sh
+        set -x  # Enable script debugging
+        ./build/build_maven.sh
+        if [ $? -ne 0 ]; then
+          echo "Error: Maven build process failed. Please check the logs."
+          # Display the logs
+          echo "Build logs:"
+          cat build.log
+          exit 1
+        else
+          echo "Maven build completed successfully."
         fi
 
   Image-Build:
