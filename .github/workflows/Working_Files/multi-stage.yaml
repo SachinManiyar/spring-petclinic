@@ -1,10 +1,10 @@
 name: DevSecOps_Pipeline_Multistagee
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 env:
   SBOM_FILE: sbom.json # Defines the name of the Software Bill of Materials (SBOM) file (sbom.json) to be generated or used.
