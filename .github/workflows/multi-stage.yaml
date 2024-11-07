@@ -20,7 +20,7 @@ env:
   
 jobs:
    
-  build:
+  Security-Scanning:
     runs-on: ubuntu-22.04
     container:
       image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
@@ -151,7 +151,7 @@ jobs:
      #    fi
 
   Build-and-Generate-Image:
-    needs: build
+    needs: Security-Scanning
     runs-on: ubuntu-22.04
     container:
       image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
