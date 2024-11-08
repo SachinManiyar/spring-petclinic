@@ -121,34 +121,18 @@ jobs:
           echo "SBOM for Software Composition Analysis  completed successfully."
         fi
 
-     - name: EPSS CVSS and CISA Score
-       run: |
-        chmod +x ./build/Vunerability_score.sh
-        set -x  # Enable script debugging
-        bash build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
-        if [ $? -ne 0 ]; then
-          echo "Error: EPSS, CVSS and CISA Check failed."
-          exit 1
-        else
-          echo " EPSS, CVSS and CISA Check completed successfully."
-        fi
-
-    
-     # - name: Build with Maven Wrapper
+     # - name: EPSS CVSS and CISA Score
      #   run: |
-     #    echo "Starting Build with Maven Wrapper..."
-     #    chmod +x ./build/build_maven.sh
+     #    chmod +x ./build/Vunerability_score.sh
      #    set -x  # Enable script debugging
-     #    ./build/build_maven.sh
+     #    bash build/Vunerability_score.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }} -d ${{ secrets.D_SCORE }}
      #    if [ $? -ne 0 ]; then
-     #      echo "Error: Maven build process failed. Please check the logs."
-     #      # Display the logs
-     #      echo "Build logs:"
-     #      cat build.log
+     #      echo "Error: EPSS, CVSS and CISA Check failed."
      #      exit 1
      #    else
-     #      echo "Maven build completed successfully."
+     #      echo " EPSS, CVSS and CISA Check completed successfully."
      #    fi
+
 
   Build-and-Generate-Image:
     needs: Security-Scanning
