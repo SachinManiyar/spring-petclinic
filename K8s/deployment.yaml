@@ -27,6 +27,6 @@ spec:
 
         image: ghcr.io/dheeman2912/spring-petclinic:1.1
         ports:
-        - containerPort: 808
+        - containerPort: 8080
 
 
