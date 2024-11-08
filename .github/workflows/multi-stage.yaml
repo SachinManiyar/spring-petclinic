@@ -1,10 +1,10 @@
 name: DevSecOps_Pipeline_Multistagee
 
-# on:
-#   push:
-#     branches:
-#       - test
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
 
 env:
   SBOM_FILE: sbom.json # Defines the name of the Software Bill of Materials (SBOM) file (sbom.json) to be generated or used.
@@ -484,20 +484,30 @@ jobs:
           fi
 
   
-     - name: Deploy to AKS
+     # - name: Deploy to AKS
+     #   run: |
+     #     if kubectl apply -f K8s/deployment.yaml; then
+     #      echo "Deployment applied successfully."
+     #     else
+     #      echo "Error deploying application."
+     #      exit 1
+     #     fi
+     #     if kubectl apply -f K8s/service.yaml; then
+     #      echo "Service applied successfully."
+     #     else
+     #      echo "Error deploying service."
+     #      exit 1
+     #     fi
+
+     - name: Deploy to AKS using Helm
        run: |
-         if kubectl apply -f K8s/deployment.yaml; then
-          echo "Deployment applied successfully."
-         else
-          echo "Error deploying application."
-          exit 1
-         fi
-         if kubectl apply -f K8s/service.yaml; then
-          echo "Service applied successfully."
-         else
-          echo "Error deploying service."
-          exit 1
-         fi
+          if helm upgrade --install k8s-chart ./helm-chart --values ./helm-chart/values.yaml; then
+            echo "Helm chart deployed successfully."
+          else
+            echo "Error deploying Helm chart."
+            exit 1
+          fi
+
 
      - name: Post Deployment Health Check
        id: http_status_check 
