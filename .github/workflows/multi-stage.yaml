@@ -467,22 +467,6 @@ jobs:
             exit 1
           fi
 
-  
-     # - name: Deploy to AKS
-     #   run: |
-     #     if kubectl apply -f K8s/deployment.yaml; then
-     #      echo "Deployment applied successfully."
-     #     else
-     #      echo "Error deploying application."
-     #      exit 1
-     #     fi
-     #     if kubectl apply -f K8s/service.yaml; then
-     #      echo "Service applied successfully."
-     #     else
-     #      echo "Error deploying service."
-     #      exit 1
-     #     fi
-
      - name: Deploy to AKS using Helm
        run: |
           if helm upgrade --install k8s-chart ./helm-chart --values ./helm-chart/values.yaml; then
@@ -494,10 +478,38 @@ jobs:
 
 
      - name: Post Deployment Health Check
-       id: http_status_check 
+       id: http_status_check
        run: |
-            echo "Performing HTTP status check on the service"
-            sleep 60
-            HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http:// 4.186.35.144:8080)
-            echo "HTTP Status: $HTTP_STATUS"
-            echo "$HTTP_STATUS" > http_status.log
+          # Fetch the dynamic service IP for LoadBalancer service
+          echo "Fetching the service IP dynamically for LoadBalancer service..."
+          SERVICE_NAME="my-app-service"  
+          NAMESPACE="default"        
+          
+          # Fetch the external IP for LoadBalancer service
+          SERVICE_IP=$(kubectl get svc $SERVICE_NAME --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          
+          # Check if the SERVICE_IP is retrieved successfully
+          if [ -z "$SERVICE_IP" ]; then
+            echo "Error: Could not retrieve LoadBalancer IP. Exiting..." | tee -a http_status.log
+            exit 1
+          else
+            echo "Success: LoadBalancer IP retrieved successfully - $SERVICE_IP" | tee -a http_status.log
+          fi
+      
+          SERVICE_PORT="8080"
+          
+          echo "Performing HTTP status check on the service at http://$SERVICE_IP:$SERVICE_PORT" | tee -a http_status.log
+          sleep 60
+      
+          # Capture the HTTP status code
+          HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$SERVICE_IP:$SERVICE_PORT)
+          echo "HTTP Status: $HTTP_STATUS" | tee -a http_status.log
+          
+          # Check if the status code is 200
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "Success: Service is running and returned HTTP 200 OK." | tee -a http_status.log
+          else
+            echo "Error: Service returned HTTP $HTTP_STATUS. Health check failed." | tee -a http_status.log
+            exit 1
+          fi
+
