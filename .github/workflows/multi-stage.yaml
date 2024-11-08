@@ -482,29 +482,39 @@ jobs:
        run: |
           # Fetch the dynamic service IP for LoadBalancer service
           echo "Fetching the service IP dynamically for LoadBalancer service..."
-          SERVICE_NAME="my-app-service"  
-          NAMESPACE="default"        
+          SERVICE_NAME="my-app-service"
+          NAMESPACE="default"
+          RETRY_COUNT=10
+          SLEEP_INTERVAL=30
           
-          # Fetch the external IP for LoadBalancer service
-          SERVICE_IP=$(kubectl get svc $SERVICE_NAME --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          # Retry fetching the external IP for LoadBalancer service until successful or retries are exhausted
+          for i in $(seq 1 $RETRY_COUNT); do
+            SERVICE_IP=$(kubectl get svc $SERVICE_NAME --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            
+            if [ -z "$SERVICE_IP" ]; then
+              echo "Attempt $i: LoadBalancer IP not available yet. Retrying in $SLEEP_INTERVAL seconds..." | tee -a http_status.log
+              sleep $SLEEP_INTERVAL
+            else
+              echo "Success: LoadBalancer IP retrieved successfully - $SERVICE_IP" | tee -a http_status.log
+              break
+            fi
+          done
           
-          # Check if the SERVICE_IP is retrieved successfully
+          # Check if SERVICE_IP was retrieved after retries
           if [ -z "$SERVICE_IP" ]; then
-            echo "Error: Could not retrieve LoadBalancer IP. Exiting..." | tee -a http_status.log
+            echo "Error: Could not retrieve LoadBalancer IP after $RETRY_COUNT attempts. Exiting..." | tee -a http_status.log
             exit 1
-          else
-            echo "Success: LoadBalancer IP retrieved successfully - $SERVICE_IP" | tee -a http_status.log
           fi
       
           SERVICE_PORT="8080"
-          
+      
           echo "Performing HTTP status check on the service at http://$SERVICE_IP:$SERVICE_PORT" | tee -a http_status.log
           sleep 60
       
           # Capture the HTTP status code
           HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" http://$SERVICE_IP:$SERVICE_PORT)
           echo "HTTP Status: $HTTP_STATUS" | tee -a http_status.log
-          
+      
           # Check if the status code is 200
           if [ "$HTTP_STATUS" -eq 200 ]; then
             echo "Success: Service is running and returned HTTP 200 OK." | tee -a http_status.log
@@ -512,4 +522,3 @@ jobs:
             echo "Error: Service returned HTTP $HTTP_STATUS. Health check failed." | tee -a http_status.log
             exit 1
           fi
-
