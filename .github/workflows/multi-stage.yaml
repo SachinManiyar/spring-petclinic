@@ -36,6 +36,9 @@ jobs:
     steps:
      - name: Checkout Code
        uses: actions/checkout@v4
+
+     - name: Checkout Code
+       run: echo "$GITHUB_RUN_NUMBER"
    
      - name: Install Necessary Tools and Dependencies
        id: install_tools_and_dependencies
