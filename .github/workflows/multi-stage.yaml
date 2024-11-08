@@ -38,7 +38,13 @@ jobs:
        uses: actions/checkout@v4
 
      - name: Checkout Code
-       run: echo "$GITHUB_RUN_NUMBER"
+       run: | 
+       
+         echo "$GITHUB_RUN_NUMBER"
+         echo "${GITHUB_REF##*/}"
+           
+           
+           
    
      - name: Install Necessary Tools and Dependencies
        id: install_tools_and_dependencies
