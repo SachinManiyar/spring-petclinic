@@ -480,10 +480,12 @@ jobs:
 
      
      - name: Trigger Kyverno Policy Workflow
-       uses: ./.github/workflows/Kyverno.yaml  # Path to the Kyverno Policy workflow in the same repo
-       with:
-          ref: 'test'  # Specify the branch to trigger the workflow from (test branch)
-          
+       run: |
+        echo "Triggering Kyverno Policy Workflow..."
+        curl -X POST https://api.github.com/repos/${{ github.repository }}/actions/workflows/Kyverno.yaml/dispatches \
+          -H "Authorization: Bearer ${{ secrets.CR_PASSWORD }}" \
+          -d '{"ref":"test"}'
+              
      - name: Deploy to AKS using Helm
        run: |
           if helm upgrade --install k8s-chart ./helm-chart --values ./helm-chart/values.yaml; then
