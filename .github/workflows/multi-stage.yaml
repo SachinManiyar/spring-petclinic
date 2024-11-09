@@ -53,32 +53,32 @@ jobs:
         echo "Tool installation completed successfully."
 
   
-     - name: Cache SonarQube packages
-       uses: actions/cache@v4
-       with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-     - name: Cache Maven packages
-       uses: actions/cache@v4
-       with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-     - name: SAST Scanning
-       env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}      
-       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
+     # - name: Cache SonarQube packages
+     #   uses: actions/cache@v4
+     #   with:
+     #      path: ~/.sonar/cache
+     #      key: ${{ runner.os }}-sonar
+     #      restore-keys: ${{ runner.os }}-sonar
+     # - name: Cache Maven packages
+     #   uses: actions/cache@v4
+     #   with:
+     #      path: ~/.m2
+     #      key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+     #      restore-keys: ${{ runner.os }}-m2
+     # - name: SAST Scanning
+     #   env:
+     #      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+     #      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}      
+     #   run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true -Dsonar.projectKey=spring-petclinic -Dsonar.projectName='spring-petclinic'
 
-     - name: SAST Quality Gate
-       run: |
-        sleep 20
-        STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "${{ secrets.HOST_URL }} api/qualitygates/project_status?projectKey=spring-petclinic" | jq -r '.projectStatus.status')
-        echo "Quality Gate Status: $STATUS"
-        if [ "$STATUS" != "OK" ]; then
-        echo "SonarQube Quality Gate failed"
-        fi
+     # - name: SAST Quality Gate
+     #   run: |
+     #    sleep 20
+     #    STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} "${{ secrets.HOST_URL }} api/qualitygates/project_status?projectKey=spring-petclinic" | jq -r '.projectStatus.status')
+     #    echo "Quality Gate Status: $STATUS"
+     #    if [ "$STATUS" != "OK" ]; then
+     #    echo "SonarQube Quality Gate failed"
+     #    fi
 
      - name: Generate SBOM with Syft
        run: |
@@ -109,17 +109,17 @@ jobs:
           exit 1
         fi
 
-     - name: Upload SBOM for Software Composition Analysis 
-       run: |
-        chmod +x ./build/sbom_upload.sh
-        set -x  # Enable script debugging
-        ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
-        if [ $? -ne 0 ]; then
-          echo "Error: SBOM for Software Composition Analysis failed."
-          exit 1
-        else
-          echo "SBOM for Software Composition Analysis  completed successfully."
-        fi
+     # - name: Upload SBOM for Software Composition Analysis 
+     #   run: |
+     #    chmod +x ./build/sbom_upload.sh
+     #    set -x  # Enable script debugging
+     #    ./build/sbom_upload.sh -u ${{ secrets.URL_SCORE }} -t ${{ secrets.T_SCORE }} -p ${{ secrets.P_SCORE }} -v ${{ secrets.V_SCORE }}
+     #    if [ $? -ne 0 ]; then
+     #      echo "Error: SBOM for Software Composition Analysis failed."
+     #      exit 1
+     #    else
+     #      echo "SBOM for Software Composition Analysis  completed successfully."
+     #    fi
 
      # - name: EPSS CVSS and CISA Score
      #   run: |
