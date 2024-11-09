@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-resource-limits-and-security-context
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-resource-limits
+      match:
+        resources:
+          kinds:
+            - Pod
+          namespaces:
+            - default  # Replace with your target namespace
+      validate:
+        message: "Pods must have resource requests and limits defined."
+        pattern:
+          spec:
+            containers:
+              - name: "*"
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "1Gi"
+    
+    - name: check-security-context
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: "Pods must have a security context that specifies runAsUser and runAsGroup."
+        pattern:
+          spec:
+            securityContext:
+              runAsUser: 1000
+              runAsGroup: 3000
