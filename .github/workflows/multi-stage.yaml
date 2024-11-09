@@ -467,6 +467,17 @@ jobs:
             exit 1
           fi
 
+     - name: Apply Kyverno Policy
+       run: |
+        echo "Applying Kyverno policy..."
+        kubectl apply -f Kyverno/Kyverno-Policy.yaml
+        if [ $? -eq 0 ]; then
+          echo "Kyverno policy applied successfully."
+        else
+          echo "Error applying Kyverno policy."
+          exit 1
+        fi
+
      - name: Deploy to AKS using Helm
        run: |
           if helm upgrade --install k8s-chart ./helm-chart --values ./helm-chart/values.yaml; then
