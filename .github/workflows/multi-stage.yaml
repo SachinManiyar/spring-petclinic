@@ -522,3 +522,9 @@ jobs:
             echo "Error: Service returned HTTP $HTTP_STATUS. Health check failed." | tee -a http_status.log
             exit 1
           fi
+
+          # Display the content of http_status.log
+          echo "============================="
+          echo "Contents of http_status.log:"
+          echo "============================="
+          cat http_status.log
