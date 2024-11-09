@@ -1,17 +1,23 @@
 name: Apply Kyverno Policy
 
 on:
-  workflow_dispatch: # Allows this workflow to be manually triggered or called from another workflow.
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Branch to trigger the workflow from'
+        required: true
+        type: string  # Specify the type of input
+        default: 'test'
 
 jobs:
   apply-kyverno-policy:
     runs-on: ubuntu-latest
     container:
-      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed" # Use the specified container image
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed"
       
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Apply Kyverno Policy
         run: |
