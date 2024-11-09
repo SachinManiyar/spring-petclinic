@@ -1,0 +1,25 @@
+name: Apply Kyverno Policy
+
+on:
+  workflow_dispatch: # Allows this workflow to be manually triggered or called from another workflow.
+
+jobs:
+  apply-kyverno-policy:
+    runs-on: ubuntu-latest
+    container:
+      image: "dheeman29/agent-image@sha256:02612f90f96caf5c8d7eebf1cbb5513c281362ee7893393fad366fe4580ee4ed" # Use the specified container image
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Apply Kyverno Policy
+        run: |
+          echo "Applying Kyverno policy..."
+          kubectl apply -f Kyverno/Kyverno-Policy.yaml
+          if [ $? -eq 0 ]; then
+            echo "Kyverno policy applied successfully."
+          else
+            echo "Error applying Kyverno policy."
+            exit 1
+          fi
