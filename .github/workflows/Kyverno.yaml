@@ -1,3 +1,5 @@
+# .github/workflows/Kyverno.yaml
+
 name: Apply Kyverno Policy
 
 on:
@@ -6,8 +8,8 @@ on:
       ref:
         description: 'Branch to trigger the workflow from'
         required: true
-        type: string  # Specify the type of input
-        default: 'test'
+        type: string
+        default: 'test'  # Default value for the input
 
 jobs:
   apply-kyverno-policy:
