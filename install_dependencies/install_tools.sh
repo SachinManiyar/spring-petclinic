@@ -58,4 +58,9 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.
 apt-get update
 apt-get install -y helm
 
+# Install Kyverno using Helm
+echo "Installing Kyverno..."
+helm repo add kyverno https://kyverno.github.io/kyverno/
+helm install kyverno kyverno/kyverno -n kyverno --create-namespace
+
 echo "All tools installed successfully."
