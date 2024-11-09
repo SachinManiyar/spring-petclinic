@@ -479,12 +479,17 @@ jobs:
      #    fi
 
      
+     # - name: Trigger Kyverno Policy Workflow
+     #   run: |
+     #    echo "Triggering Kyverno Policy Workflow..."
+     #    curl -X POST https://api.github.com/repos/${{ github.repository }}/actions/workflows/Kyverno.yaml/dispatches \
+     #      -H "Authorization: Bearer ${{ secrets.CR_PASSWORD }}" \
+     #      -d '{"ref":"test"}'
+
      - name: Trigger Kyverno Policy Workflow
-       run: |
-        echo "Triggering Kyverno Policy Workflow..."
-        curl -X POST https://api.github.com/repos/${{ github.repository }}/actions/workflows/Kyverno.yaml/dispatches \
-          -H "Authorization: Bearer ${{ secrets.CR_PASSWORD }}" \
-          -d '{"ref":"test"}'
+       uses: ./.github/workflows/Kyverno.yaml  # Correctly reference the Kyverno workflow
+       with:
+          ref: 'test'  # Specify the branch to trigger the workflow from (test branch)
               
      - name: Deploy to AKS using Helm
        run: |
