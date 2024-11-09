@@ -10,6 +10,7 @@ on:
         required: true
         type: string
         default: 'test'  # Default value for the input
+  workflow_dispatch:  # Add this line to enable manual trigger
 
 jobs:
   apply-kyverno-policy:
