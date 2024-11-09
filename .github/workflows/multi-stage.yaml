@@ -478,11 +478,11 @@ jobs:
      #      exit 1
      #    fi
 
+     
      - name: Trigger Kyverno Policy Workflow
-       uses: peter-evans/workflow-dispatch@v1
+       uses: ./.github/workflows/Kyverno.yaml  # Path to the Kyverno Policy workflow in the same repo
        with:
-          workflow: 'Kyverno.yaml' # The name of the workflow to trigger
-          ref: test # Specify the branch you want to trigger the workflow from
+          ref: 'test'  # Specify the branch to trigger the workflow from (test branch)
           
      - name: Deploy to AKS using Helm
        run: |
